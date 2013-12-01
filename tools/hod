@@ -1,0 +1,216 @@
+#!/bin/bash
+
+#   Copyright (C) 2013 Timo Kousa
+#
+#   This file is part of HLS On Demand.
+#
+#   HLS On Demand is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   HLS On Demand is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
+
+TEMP=$(getopt -n ${0} -o c:efhk:K:n:p:sSt:u:U: -- "${@}")
+if [ ${?} != 0 ]; then
+	echo "Usage: ${0} [options] input"
+	exit 1
+fi
+
+eval set -- "${TEMP}"
+
+while true; do
+	case "${1}" in
+		-c)
+			SEG_OPTS="${SEG_OPTS} -c ${2}"
+			TIMESTAMP_FILE="${2}"
+			shift 2 ;;
+		-e)
+			SEG_OPTS="${SEG_OPTS} -e"
+			shift ;;
+		-f)
+			SEG_OPTS="${SEG_OPTS} -f"
+			shift ;;
+		-h)
+			echo "A script to make ABR HLS (c) timo.kousa@welho.com"
+			echo
+			echo "Usage: ${0} [options] input"
+			echo
+			echo "Options:"
+			echo " -c <file>     \"keepalive\" file"
+			echo " -e            use time() as index in filenames"
+			echo " -f            force overwrite of output files"
+			echo " -k <keyfile>  keyfile for openssl aes encryption"
+			echo " -K <url>      url for aes key in the playlist"
+			echo " -n <count>    keep <count> segments (0 keeps all)"
+			echo " -p <prefix>   prefix for all files to be created"
+			echo " -s            use the system time instead of PTS"
+			echo " -S            burn dvbsubtitles"
+			echo " -t <sec>      target duration of a segment (default: 10)"
+			echo " -u <url>      url prefix for playlists in the abr playlist"
+			echo " -U <url>      url prefix for ts-files in the playlist"
+			echo
+			exit ;;
+		-k)
+			KEYFILE="${2}"
+			shift 2 ;;
+		-K)
+			SEG_OPTS="${SEG_OPTS} -K ${2}"
+			shift 2 ;;
+		-n)
+			OPT_n="-n ${2}"
+			shift 2 ;;
+		-p)
+			PREFIX=$(basename ${2})
+			DATADIR="$(dirname ${2})"
+			shift 2 ;;
+		-s)
+			SEG_OPTS="${SEG_OPTS} -s"
+			shift ;;
+		-S)
+			SUBTITLES="-filter_complex [0:v][0:s:0]overlay"
+			shift ;;
+		-t)
+			SEG_OPTS="${SEG_OPTS} -t ${2}"
+			shift 2 ;;
+		-u)
+			URL_PREFIX="${2}"
+			shift 2 ;;
+		-U)
+			SEG_OPTS="${SEG_OPTS} -U ${2}"
+			shift 2 ;;
+		--)
+			shift
+			break ;;
+	esac
+done
+
+INPUT=${1}
+
+if [ -z "${INPUT}" ]; then
+	echo "Input is required."
+	exit 1
+fi
+
+if [ -z "${PREFIX}" ]; then
+	echo "Prefix for the files needs to be set (-p)"
+	exit 1
+fi
+
+test -s /etc/hod.conf && source /etc/hod.conf
+
+test -z "${WORKDIR}" && WORKDIR='/tmp/hod'
+
+test -z "${WIFI_SIZE}" && WIFI_SIZE="640x360"
+test -z "${CELL_SIZE}" && CELL_SIZE="480x270"
+
+test -z "${WIFI_BW}" && WIFI_BW='1200000'
+test -z "${CELL_BW}" && CELL_BW='400000'
+test -z "${AUDIO_BW}" && AUDIO_BW='64000'
+
+test -z "${WIFI_CODEC}" && WIFI_CODEC="avc1.66.30"
+test -z "${CELL_CODEC}" && CELL_CODEC="avc1.66.30"
+test -z "${AUDIO_CODEC}" && AUDIO_CODEC="mp4a.40.2"
+
+test -z "${WIFI_FFOPT}" && WIFI_FFOPT="-vf yadif -c:v libx264 -preset ultrafast -s ${WIFI_SIZE} -b:v ${WIFI_BW} -minrate ${WIFI_BW} -maxrate ${WIFI_BW} -bufsize $((WIFI_BW / 2)) -r 25 -x264opts keyint=80"
+test -z "${CELL_FFOPT}" && CELL_FFOPT="-vf yadif -c:v libx264 -preset ultrafast -s ${CELL_SIZE} -b:v ${CELL_BW} -minrate ${CELL_BW} -maxrate ${CELL_BW} -bufsize $((CELL_BW / 2)) -r 12.5 -x264opts keyint=40"
+test -z "${AUDIO_FFOPT}" && AUDIO_FFOPT="-c:a libfaac -b:a ${AUDIO_BW} -ac 1"
+
+test -d ${WORKDIR} || mkdir -p ${WORKDIR}
+
+test -s "${WORKDIR}/${PREFIX}.streams" || ffprobe -loglevel fatal -show_streams "${INPUT}" > "${WORKDIR}/${PREFIX}.streams"
+
+test -n "${SUBTITLES}" && grep -q "codec_name=dvbsub" "${WORKDIR}/${PREFIX}.streams" || unset SUBTITLES
+
+if ! grep -q "codec_type=video" "${WORKDIR}/${PREFIX}.streams"; then
+	WIFI_FFOPT=""
+	CELL_FFOPT=""
+fi
+
+if grep -q "codec_type=audio" "${WORKDIR}/${PREFIX}.streams"; then
+	WIFI_CODEC="${WIFI_CODEC}, ${AUDIO_CODEC}"
+	CELL_CODEC="${CELL_CODEC}, ${AUDIO_CODEC}"
+else
+	AUDIO_FFOPT=""
+	AUDIO_BW="0"
+	SEG_OPTS="${SEG_OPTS} -a"
+fi
+
+test -n "${WIFI_FFOPT}" && FIFOS="${FIFOS} ${WORKDIR}/${PREFIX}.wifi.fifo"
+test -n "${CELL_FFOPT}" && FIFOS="${FIFOS} ${WORKDIR}/${PREFIX}.cell.fifo"
+test -n "${AUDIO_FFOPT}" && FIFOS="${FIFOS} ${WORKDIR}/${PREFIX}.audio.fifo"
+
+if [ -z "${FIFOS}" ]; then
+	rm -f "${WORKDIR}/${PREFIX}.streams"
+	test -n "${TIMESTAMP_FILE}" && rm -f "${TIMESTAMP_FILE}"
+	exit
+fi
+
+mkfifo ${FIFOS} || exit
+
+if [ -n "${KEYFILE}" ]; then
+	SEG_OPTS="${SEG_OPTS} -k ${KEYFILE}"
+	test -s "${KEYFILE}" || openssl rand 16 > "${KEYFILE}"
+fi
+
+test -n "${DATADIR}" -a ! -d ${DATADIR} && mkdir -p ${DATADIR}
+
+FFMPEG_OPTS="-i ${INPUT}"
+
+echo "#EXTM3U" > "${DATADIR}/${PREFIX}.m3u8.part"
+
+if [ -n "${WIFI_FFOPT}" ]; then
+	echo "#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=$(((WIFI_BW + AUDIO_BW) * 110 / 100)), CODECS=\"${WIFI_CODEC}\", RESOLUTION=${WIFI_SIZE}" >> "${DATADIR}/${PREFIX}.m3u8.part"
+	echo "${URL_PREFIX}${PREFIX}.wifi.m3u8" >> "${DATADIR}/${PREFIX}.m3u8.part"
+
+	FFMPEG_OPTS="${FFMPEG_OPTS} ${SUBTITLES} ${WIFI_FFOPT}"
+	test -n "${AUDIO_FFOPT}" && FFMPEG_OPTS="${FFMPEG_OPTS} ${AUDIO_FFOPT}"
+	FFMPEG_OPTS="${FFMPEG_OPTS} -f mpegts -y ${WORKDIR}/${PREFIX}.wifi.fifo"
+
+	segmenter ${SEG_OPTS} ${OPT_n} -p "${DATADIR}/${PREFIX}.wifi.m3u8" "${DATADIR}/${PREFIX}.wifi.%u.ts" < "${WORKDIR}/${PREFIX}.wifi.fifo" &
+fi
+
+if [ -n "${CELL_FFOPT}" ]; then
+	echo "#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=$(((CELL_BW + AUDIO_BW) * 110 / 100)), CODECS=\"${CELL_CODEC}\", RESOLUTION=${CELL_SIZE}" >> "${DATADIR}/${PREFIX}.m3u8.part"
+	echo "${URL_PREFIX}${PREFIX}.cell.m3u8" >> "${DATADIR}/${PREFIX}.m3u8.part"
+
+	FFMPEG_OPTS="${FFMPEG_OPTS} ${SUBTITLES} ${CELL_FFOPT}"
+	test -n "${AUDIO_FFOPT}" && FFMPEG_OPTS="${FFMPEG_OPTS} ${AUDIO_FFOPT}"
+	FFMPEG_OPTS="${FFMPEG_OPTS} -f mpegts -y ${WORKDIR}/${PREFIX}.cell.fifo"
+
+	segmenter ${SEG_OPTS} ${OPT_n} -p "${DATADIR}/${PREFIX}.cell.m3u8" "${DATADIR}/${PREFIX}.cell.%u.ts" < "${WORKDIR}/${PREFIX}.cell.fifo" &
+fi
+
+if [ -n "${AUDIO_FFOPT}" ]; then
+	echo "#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=$((AUDIO_BW * 110 / 100)), CODECS=\"${AUDIO_CODEC}\"" >> "${DATADIR}/${PREFIX}.m3u8.part"
+	echo "${URL_PREFIX}${PREFIX}.audio.m3u8" >> "${DATADIR}/${PREFIX}.m3u8.part"
+
+	FFMPEG_OPTS="${FFMPEG_OPTS} -vn ${AUDIO_FFOPT} -f mpegts -y ${WORKDIR}/${PREFIX}.audio.fifo"
+
+	segmenter ${SEG_OPTS} ${OPT_n} -p "${DATADIR}/${PREFIX}.audio.m3u8" "${DATADIR}/${PREFIX}.audio.%u.ts" < "${WORKDIR}/${PREFIX}.audio.fifo" &
+fi
+
+mv -f "${DATADIR}/${PREFIX}.m3u8.part" "${DATADIR}/${PREFIX}.m3u8"
+
+ffmpeg ${FFMPEG_OPTS} || touch ${FIFOS}
+
+sleep 1
+
+rm -f ${FIFOS}
+
+test -n "${TIMESTAMP_FILE}" && rm -f "${TIMESTAMP_FILE}"
+
+if [ -n "${OPT_n}" ]; then
+	rm -f "${DATADIR}/${PREFIX}".m3u8 "${WORKDIR}/${PREFIX}.streams"
+	test -n "${KEYFILE}" && rm -f ${KEYFILE}
+	test -n "${WIFI_FFOPT}" && rm -f "${DATADIR}/${PREFIX}".wifi.*
+	test -n "${CELL_FFOPT}" && rm -f "${DATADIR}/${PREFIX}".cell.*
+	test -n "${AUDIO_FFOPT}" && rm -f "${DATADIR}/${PREFIX}".audio.*
+	rmdir ${DATADIR}
+fi
