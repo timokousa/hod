@@ -56,6 +56,9 @@ $session = session_name() . '=' . session_id();
   -->
   <h1>HLS On Demand</h1>
 <?php
+if (file_exists($workdir) && !is_writable($workdir))
+        echo '<font color="red">Error: ' . $workdir . ' is not writable</font><br><br>';
+
 if (!is_writable('data'))
         echo '<font color="red">Error: data dir is not writable</font><br><br>';
 ?>
