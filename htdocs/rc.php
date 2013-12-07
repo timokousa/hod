@@ -31,6 +31,9 @@ include_once 'auth.php';
 
 $cache = array();
 
+if (!file_exists($workdir))
+        mkdir($workdir);
+
 if (file_exists($workdir . DIRECTORY_SEPARATOR . 'hod-cache'))
         $cache = unserialize(file_get_contents(
                                 $workdir . DIRECTORY_SEPARATOR . 'hod-cache'));
