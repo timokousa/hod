@@ -65,6 +65,8 @@ foreach ($epg as $line) {
 foreach (array_keys($cache['sources']) as $key) {
         if (isset($now[$key]) || isset($next[$key]))
                 $cache['sources'][$key]['description'] = '<table>';
+        else
+                $cache['sources'][$key]['description'] = '';
 
         if (isset($now[$key]))
                 $cache['sources'][$key]['description'] .=
