@@ -528,14 +528,17 @@ int main(int argc, char *argv[])
                         index++;
                         nameindex = epoch ? time(NULL) : index;
 
-                        if (RAND_bytes(iv_init, AES_BLOCK_SIZE) <= 0) {
-                                fprintf(stderr, "%s\n",
-                                                ERR_error_string(ERR_get_error(),
-                                                        NULL));
-                                return EXIT_FAILURE;
-                        }
+                        if (keyfile) {
+                                if (RAND_bytes(iv_init, AES_BLOCK_SIZE) <= 0) {
+                                        fprintf(stderr, "%s\n",
+                                                        ERR_error_string(
+                                                                ERR_get_error(),
+                                                                NULL));
+                                        return EXIT_FAILURE;
+                                }
 
-                        memcpy(iv, iv_init, AES_BLOCK_SIZE);
+                                memcpy(iv, iv_init, AES_BLOCK_SIZE);
+                        }
 
                         sprintf(fname, fmt, nameindex);
                         sprintf(tmpfile, "%s.part", fname);
