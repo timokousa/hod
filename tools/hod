@@ -120,7 +120,7 @@ test -z "${AUDIO_CODEC}" && AUDIO_CODEC="mp4a.40.2"
 
 test -z "${WIFI_FFOPT}" && WIFI_FFOPT="-vf yadif -c:v libx264 -preset ultrafast -s ${WIFI_SIZE} -b:v ${WIFI_BW} -minrate ${WIFI_BW} -maxrate ${WIFI_BW} -bufsize $((WIFI_BW / 2)) -r 25 -x264opts keyint=80"
 test -z "${CELL_FFOPT}" && CELL_FFOPT="-vf yadif -c:v libx264 -preset ultrafast -s ${CELL_SIZE} -b:v ${CELL_BW} -minrate ${CELL_BW} -maxrate ${CELL_BW} -bufsize $((CELL_BW / 2)) -r 12.5 -x264opts keyint=40"
-test -z "${AUDIO_FFOPT}" && AUDIO_FFOPT="-c:a libfaac -b:a ${AUDIO_BW} -ac 1"
+test -z "${AUDIO_FFOPT}" && AUDIO_FFOPT="-c:a libfaac -b:a ${AUDIO_BW} -ac 2"
 
 test -d ${WORKDIR} || mkdir -p ${WORKDIR}
 
