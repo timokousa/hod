@@ -59,7 +59,7 @@ test -z "${LIMIT}" && LIMIT=604800
 
 epoch=$(date +%s)
 
-for file in $(ls ${WORKDIR}/*.timestamp); do
+for file in $(ls ${WORKDIR}/*.timestamp 2>/dev/null); do
 	mtime="$(stat -c %Y ${file})"
 
 	if [ $((mtime + LIMIT)) -le ${epoch} ]; then
