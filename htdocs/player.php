@@ -85,6 +85,7 @@ $description = isset($cache['sources'][$src]) ?
  <head>
   <title><?=$title?> - HOD player</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=680px" />
   <link rel="stylesheet" type="text/css" href="style.css" />
 <?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript">
@@ -97,8 +98,8 @@ function play_video() {
 <?php } ?>
  </head>
  <body>
-  <a href=".">back</a>
-  <div width="640px" align="center">
+  <div style="width:670px">
+   <a href=".">back</a>
    <fieldset class="box">
     <legend><?=$title?></legend>
     <?=$player?>
@@ -108,7 +109,9 @@ function play_video() {
     <a href="<?=$videosrc?>">link</a>
    </fieldset>
    <form method="post">
-    <input type="submit" name="switch" value="switch player" />
+    <div align="right">
+     <input type="submit" name="switch" value="switch player" />
+    </div>
    </form>
   </div>
  </body>
