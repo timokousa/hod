@@ -60,6 +60,8 @@ if ($src && isset($cache['sources'][$src])) {
                                 ' -e' .
                                 ' -n 3';
                 }
+                else
+                        $opts .= ' -N 10';
 
                 if (isset($cache['sources'][$src]['encrypt']) &&
                                 $cache['sources'][$src]['encrypt']) {

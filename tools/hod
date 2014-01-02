@@ -17,7 +17,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 
-TEMP=$(getopt -n ${0} -o c:efhk:K:n:p:sSt:u:U: -- "${@}")
+TEMP=$(getopt -n ${0} -o c:efhk:K:n:N:p:sSt:u:U: -- "${@}")
 if [ ${?} != 0 ]; then
 	echo "Usage: ${0} [options] input"
 	exit 1
@@ -49,6 +49,7 @@ while true; do
 			echo " -k <keyfile>  keyfile for openssl aes encryption"
 			echo " -K <url>      url for aes key in the playlist"
 			echo " -n <count>    keep <count> segments (0 keeps all)"
+			echo " -N <int>      value to pass for nice -n"
 			echo " -p <prefix>   prefix for all files to be created"
 			echo " -s            use the system time instead of PTS"
 			echo " -S            burn dvbsubtitles"
@@ -65,6 +66,9 @@ while true; do
 			shift 2 ;;
 		-n)
 			OPT_n="-n ${2}"
+			shift 2 ;;
+		-N)
+			NICE="nice -n ${2}"
 			shift 2 ;;
 		-p)
 			PREFIX=$(basename ${2})
@@ -198,7 +202,7 @@ fi
 
 mv -f "${DATADIR}/${PREFIX}.m3u8.part" "${DATADIR}/${PREFIX}.m3u8"
 
-ffmpeg ${FFMPEG_OPTS} || touch ${FIFOS}
+${NICE} ffmpeg ${FFMPEG_OPTS} || touch ${FIFOS}
 
 sleep 1
 
