@@ -111,7 +111,7 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
 
         ivstr[AES_BLOCK_SIZE * 2 + 1] = '\0';
 
-        if (!(tmpfile = malloc(sizeof (char) * (strlen(plist) + 5)))) {
+        if (!(tmpfile = malloc(sizeof (char) * (strlen(plist) + 6)))) {
                 fprintf(stderr, "malloc error.\n");
                 return 0;
         }
