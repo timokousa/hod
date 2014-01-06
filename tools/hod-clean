@@ -62,13 +62,19 @@ epoch=$(date +%s)
 for file in $(ls ${WORKDIR}/*.timestamp 2>/dev/null); do
 	mtime="$(stat -c %Y ${file})"
 
-	if [ $((mtime + LIMIT)) -le ${epoch} ]; then
+	if [ "$((mtime + LIMIT))" -le "${epoch}" ]; then
 		key=$(basename ${file} .timestamp)
 
 		test -z "${key}" && continue
 
-		rm -f ${DATADIR}/${key}/*
+		rm -f ${DATADIR}/${key}/${key}.{wifi,cell,audio}.*.{ts,ts.part} ${DATADIR}/${key}/${key}{,.wifi,.cell,.audio}.{m3u8,m3u8.part}
 		rmdir ${DATADIR}/${key}
-		rm -f ${WORKDIR}/${key}.*
+		rm -f ${WORKDIR}/${key}.{streams,timestamp,key}
 	fi
+done
+
+for thumb in $(ls ${WORKDIR}/*.jpg 2>/dev/null); do
+	mtime="$(stat -c %Y ${file})"
+
+	test "$((mtime + LIMIT))" -le "${epoch}" && rm -f "${thumb}"
 done

@@ -46,6 +46,8 @@ $session = session_name() . '=' . session_id();
   <meta name="viewport" content="width=device-width, height=device-height,
   initial-scale=1" />
   <link rel="stylesheet" type="text/css" href="style.css" />
+  <link rel="icon" type="image/png" href="play.png" />
+  <link rel="apple-touch-icon" href="play.png" />
  </head>
  <body>
   <a align="right" href="?logout">Logout</a>
@@ -65,52 +67,64 @@ if (!is_writable('data'))
   <a href="#static">static</a>
   <fieldset class="box" id="live">
    <legend>live</legend>
+   <table width="100%">
 <?php
 foreach (array_keys($cache['sources']) as $key) {
         if ($cache['sources'][$key]['live'] != true)
                 continue;
-
-        $key = urlencode($key);
 ?>
-   <a href="player.php?src=<?=$key?>">
-    <?=$cache['sources'][$key]['title']?>
-   </a>
-   <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=$key?>&file=<?=$key?>.m3u8">
-    (direct&nbsp;link)
-   </a>
-   <br />
-   <div class="tiny">
-    <?=$cache['sources'][$key]['description']?>
-   </div>
-   <hr />
+    <tr>
+     <td style="border-bottom:1pt solid black;">
+      <a href="player.php?src=<?=urlencode($key)?>">
+       <img align="left" src="img.php?h=80&src=<?=urlencode($key)?>">
+      </a>
+      <a href="player.php?src=<?=urlencode($key)?>">
+       <?=$cache['sources'][$key]['title']?>
+      </a>
+      <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
+       (direct&nbsp;link)
+      </a>
+      <br />
+      <div class="tiny">
+       <?=$cache['sources'][$key]['description']?>
+      </div>
+     </td>
+    </tr>
 <?php
 }
 ?>
+   </table>
   </fieldset>
   <a href="#live">live</a>
   <fieldset class="box" id="static">
    <legend>static</legend>
+   <table width="100%">
 <?php
 foreach (array_keys($cache['sources']) as $key) {
         if ($cache['sources'][$key]['live'] == true)
                 continue;
-
-        $key = urlencode($key);
 ?>
-   <a href="player.php?src=<?=$key?>">
-    <?=$cache['sources'][$key]['title']?>
-   </a>
-   <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=$key?>&file=<?=$key?>.m3u8">
-    (direct&nbsp;link)
-   </a>
-   <br />
-   <div class="tiny">
-    <?=$cache['sources'][$key]['description']?>
-   </div>
-   <hr />
+    <tr>
+     <td style="border-bottom:1pt solid black;">
+      <a href="player.php?src=<?=urlencode($key)?>">
+       <img align="left" src="img.php?h=80&src=<?=urlencode($key)?>">
+      </a>
+      <a href="player.php?src=<?=urlencode($key)?>">
+       <?=$cache['sources'][$key]['title']?>
+      </a>
+      <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
+       (direct&nbsp;link)
+      </a>
+      <br />
+      <div class="tiny">
+       <?=$cache['sources'][$key]['description']?>
+      </div>
+     </td>
+    </tr>
 <?php
 }
 ?>
+   </table>
   </fieldset>
  </body>
 </html>

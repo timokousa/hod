@@ -21,6 +21,8 @@
 include_once 'rc.php';
 
 $vdrhost = 'localhost';
+$logodir = '/usr/share/vdr/channel-logos';
+$logoextension = 'xpm';
 
 foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
         if (!rtrim($line))
@@ -33,6 +35,13 @@ foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
                 $cache['sources'][$key]['live'] = true;
                 $cache['sources'][$key]['title'] = $name;
                 $cache['sources'][$key]['uri'] = rtrim($line);
+
+                $logofile = $logodir . DIRECTORY_SEPARATOR .
+                        preg_replace('/^[0-9]* /', '', $name) .
+                        '.' . $logoextension;
+
+                if (file_exists($logofile))
+                        $cache['sources'][$key]['thumbnail'] = $logofile;
         }
 }
 
@@ -63,23 +72,14 @@ foreach ($epg as $line) {
 }
 
 foreach (array_keys($cache['sources']) as $key) {
-        if (isset($now[$key]) || isset($next[$key]))
-                $cache['sources'][$key]['description'] = '<table>';
-        else
-                $cache['sources'][$key]['description'] = '';
+        $cache['sources'][$key]['description'] = '';
 
         if (isset($now[$key]))
-                $cache['sources'][$key]['description'] .=
-                        '<tr><td valign="top">Now:</td><td>' .
-                        $now[$key] . '</td></tr>';
+                $cache['sources'][$key]['description'] .= '<b>Now: ' .
+                        $now[$key] .  '</b><br>';
 
         if (isset($next[$key]))
-                $cache['sources'][$key]['description'] .=
-                        '<tr><td valign="top">Next:</td><td>' .
-                        $next[$key] . '</td></tr>';
-
-        if (isset($now[$key]) || isset($next[$key]))
-                $cache['sources'][$key]['description'] .= '</table>';
+                $cache['sources'][$key]['description'] .= 'Next: ' . $next[$key];
 }
 
 if (!isset($cache['expires']))

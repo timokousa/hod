@@ -61,7 +61,10 @@ $player = '';
 if ($_SESSION['player'] == 'html5') {
         $player = '<video autoplay onClick="play_video();" id="video"' .
                 ' width="640px" height="360px" src="' . $videosrc . '"' .
-                ' poster="play.png" type="application/x-mpegURL">:(</video>';
+                ' poster="img.php?src=' . urlencode($src) . '"' .
+                ' type="application/x-mpegURL">' .
+                '<a href="' . $videosrc . '">link</a>' .
+                '</video>';
 }
 elseif ($_SESSION['player'] == 'vlc') {
         $player = '<object classid="clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921"' .
@@ -87,6 +90,8 @@ $description = isset($cache['sources'][$src]) ?
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=680px" />
   <link rel="stylesheet" type="text/css" href="style.css" />
+  <link rel="icon" type="image/png" href="play.png" />
+  <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
 <?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript">
 function play_video() {
