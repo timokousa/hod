@@ -29,9 +29,11 @@ $height = (isset($_GET['h']) && is_numeric($_GET['h'])) ? $_GET['h'] : false;
 if ($src && !isset($cache['sources']))
         include_once 'sources.php';
 
-if ($src && isset($cache['sources'][$src])) {
-        $play = imagecreatefrompng('play.png');
+$play = imagecreatefrompng('play.png');
 
+$thumb = null;
+
+if ($src && isset($cache['sources'][$src])) {
         $file = null;
 
         if (isset($cache['sources'][$src]['thumbnail']) &&
@@ -67,72 +69,68 @@ if ($src && isset($cache['sources'][$src])) {
                         $thumb = (imagetypes() & IMG_XPM) ?
                                         imagecreatefromxpm($file) : null;
                         break;
-                default:
-                        $thumb = null;
         }
-
-        if ($thumb) {
-                $w = imagesx($thumb);
-                $h = imagesy($thumb);
-
-                if (imagesx($play) > $w) {
-                        $w = imagesx($play);
-                        $h = imagesy($thumb) *
-                                (imagesx($play) / imagesx($thumb));
-                }
-
-                if (imagesy($play) > $h) {
-                        $h = imagesy($play);
-                        $w = imagesx($thumb) *
-                                (imagesy($play) / imagesy($thumb));
-                }
-        }
-        else {
-                $w = imagesx($play);
-                $h = imagesy($play);
-        }
-
-        $img = imagecreatetruecolor($w, $h);
-        imagefill($img, 0, 0, imagecolorallocatealpha($img, 0, 0, 0, 127));
-        imagesavealpha($img, true);
-
-        if ($thumb)
-                imagecopyresampled($img, $thumb, 0, 0, 0, 0,
-                                $w, $h, imagesx($thumb), imagesy($thumb));
-
-        $r = min(imagesx($img) / imagesx($play),
-                        imagesy($img) / imagesy($play));
-
-        $w = imagesx($play) * $r;
-        $h = imagesy($play) * $r;
-
-        $x = (imagesx($img) - $w) / 2;
-        $y = (imagesy($img) - $h) / 2;
-
-        imagecopyresampled($img, $play, $x, $y, 0, 0,
-                        $w, $h, imagesx($play), imagesy($play));
-
-        if ($width || $height) {
-                if (!$width)
-                        $width = imagesx($img) * ($height / imagesy($img));
-                elseif (!$height)
-                        $height = imagesy($img) * ($width / imagesx($img));
-
-                $tmp = imagecreatetruecolor($width, $height);
-                imagefill($tmp, 0, 0,
-                                imagecolorallocatealpha($tmp, 0, 0, 0, 127));
-                imagesavealpha($tmp, true);
-
-                imagecopyresized($tmp, $img, 0, 0, 0, 0,
-                                $width, $height, imagesx($img), imagesy($img));
-
-                imagedestroy($img);
-
-                $img = $tmp;
-        }
-
-        header('Content-Type: image/png');
-        imagepng($img);
 }
+
+if ($thumb) {
+        $w = imagesx($thumb);
+        $h = imagesy($thumb);
+
+        if (imagesx($play) > $w) {
+                $w = imagesx($play);
+                $h = imagesy($thumb) *
+                        (imagesx($play) / imagesx($thumb));
+        }
+
+        if (imagesy($play) > $h) {
+                $h = imagesy($play);
+                $w = imagesx($thumb) *
+                        (imagesy($play) / imagesy($thumb));
+        }
+}
+else {
+        $w = imagesx($play);
+        $h = imagesy($play);
+}
+
+$img = imagecreatetruecolor($w, $h);
+imagefill($img, 0, 0, imagecolorallocatealpha($img, 0, 0, 0, 127));
+imagesavealpha($img, true);
+
+if ($thumb)
+        imagecopyresampled($img, $thumb, 0, 0, 0, 0,
+                        $w, $h, imagesx($thumb), imagesy($thumb));
+
+$r = min(imagesx($img) / imagesx($play), imagesy($img) / imagesy($play));
+
+$w = imagesx($play) * $r;
+$h = imagesy($play) * $r;
+
+$x = (imagesx($img) - $w) / 2;
+$y = (imagesy($img) - $h) / 2;
+
+imagecopyresampled($img, $play, $x, $y, 0, 0,
+                $w, $h, imagesx($play), imagesy($play));
+
+if ($width || $height) {
+        if (!$width)
+                $width = imagesx($img) * ($height / imagesy($img));
+        elseif (!$height)
+                $height = imagesy($img) * ($width / imagesx($img));
+
+        $tmp = imagecreatetruecolor($width, $height);
+        imagefill($tmp, 0, 0, imagecolorallocatealpha($tmp, 0, 0, 0, 127));
+        imagesavealpha($tmp, true);
+
+        imagecopyresized($tmp, $img, 0, 0, 0, 0,
+                        $width, $height, imagesx($img), imagesy($img));
+
+        imagedestroy($img);
+
+        $img = $tmp;
+}
+
+header('Content-Type: image/png');
+imagepng($img);
 
 ?>
