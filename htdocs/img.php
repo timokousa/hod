@@ -45,19 +45,22 @@ if ($src && isset($cache['sources'][$src])) {
 
                 if (file_exists($file))
                         touch($file);
-                else
+                else {
+                        touch($file);
+
                         exec('nice ffmpeg' .
                                         ' -i ' . escapeshellarg(
                                                 $cache['sources'][$src]['uri']) .
                                         ' -ss ' . $thumbnail_position .
                                         ' -vframes 1' .
                                         ' -vf thumbnail,scale=iw*sar/2:ih/2' .
-                                        ' ' . escapeshellarg($file));
+                                        ' -y ' . escapeshellarg($file));
+                }
         }
 
         $i = pathinfo($file);
 
-        switch (strtolower(isset($i['extension']) ? $i['extension'] : '')) {
+        switch (isset($i['extension']) ? strtolower($i['extension']) : '') {
                 case 'jpeg':
                 case 'jpg':
                         $thumb = @imagecreatefromjpeg($file);
