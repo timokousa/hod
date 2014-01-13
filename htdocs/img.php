@@ -29,6 +29,20 @@ $height = (isset($_GET['h']) && is_numeric($_GET['h'])) ? $_GET['h'] : false;
 if ($src && !isset($cache['sources']))
         include_once 'sources.php';
 
+if (!isset($cache['thumbs_purged']) ||
+                $cache['thumbs_purged'] + 86400 < time()) {
+        $cache['thumbs_purged'] = time();
+        file_put_contents($workdir . DIRECTORY_SEPARATOR . 'hod-cache',
+                        serialize($cache));
+
+        $thumbs = glob($workdir . DIRECTORY_SEPARATOR . '*.jpg');
+
+        foreach ($thumbs as $thumb)
+                if (!in_array(basename($thumb, '.jpg'),
+                                        array_keys($cache['sources'])))
+                        unlink($thumb);
+}
+
 $play = imagecreatefrompng('play.png');
 
 $thumb = null;

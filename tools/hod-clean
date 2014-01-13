@@ -72,9 +72,3 @@ for file in $(ls ${WORKDIR}/*.timestamp 2>/dev/null); do
 		rm -f ${WORKDIR}/${key}.{streams,timestamp,key}
 	fi
 done
-
-for thumb in $(ls ${WORKDIR}/*.jpg 2>/dev/null); do
-	mtime="$(stat -c %Y ${file})"
-
-	test "$((mtime + LIMIT))" -le "${epoch}" && rm -f "${thumb}"
-done
