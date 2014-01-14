@@ -34,6 +34,14 @@ if (isset($_POST['refresh'])) {
 if (!isset($cache['sources']))
         include_once 'sources.php';
 
+if (isset($_GET['q'])) {
+        foreach ($cache['sources'] as $key => $src)
+                if (!preg_match('/' . $_GET['q'] . '/i',
+                                        $src['title'] .
+                                        ' ' . $src['description']))
+                        unset($cache['sources'][$key]);
+}
+
 $urlbase = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
         $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
 $session = session_name() . '=' . session_id();
@@ -63,6 +71,10 @@ $session = session_name() . '=' . session_id();
     <td style="padding: 0px; border-bottom: 1px solid black;">
      <div style="text-align: center; font-family: Arial;">
       <h1>HLS On Demand</h1>
+      <form method="get">
+       <input name="q" value="<?=isset($_GET['q']) ? htmlentities($_GET['q']) : ''?>">
+       <input type="submit" value="Search">
+      </form>
      </div>
     </td>
    </tr>
