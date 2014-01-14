@@ -29,7 +29,6 @@ a:visited {
  -webkit-border-radius: 15px;
  -moz-border-radius: 15px;
  border-radius: 15px;
- background: #ddd;
  border: 1px solid #aaa;
  padding: 10px;
  font-family: Arial; 
@@ -37,5 +36,5 @@ a:visited {
 }
 .tiny {
  font-family: Arial; 
- font-size: 0.6em;
+ font-size: 0.8em;
 }

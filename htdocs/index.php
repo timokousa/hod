@@ -49,14 +49,23 @@ $session = session_name() . '=' . session_id();
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="play.png" />
  </head>
- <body>
-  <a align="right" href="?logout">Logout</a>
+ <body style="margin: 0; padding: 0">
+  <div style="font-family: Arial; font-size: 1em; float: right;">
+   <a align="right" href="?logout">Logout</a>
+  </div>
   <!--
   <form method="post">
    <input type="submit" name="refresh" value="refresh">
   </form>
   -->
-  <h1>HLS On Demand</h1>
+  <table width="100%" style="border-collapse: collapse;">
+   <tr>
+    <td style="padding: 0px; border-bottom: 1px solid black;">
+     <div style="text-align: center; font-family: Arial;">
+      <h1>HLS On Demand</h1>
+     </div>
+    </td>
+   </tr>
 <?php
 if (file_exists($workdir) && !is_writable($workdir))
         echo '<font color="red">Error: ' . $workdir . ' is not writable</font><br><br>';
@@ -64,67 +73,76 @@ if (file_exists($workdir) && !is_writable($workdir))
 if (!is_writable('data'))
         echo '<font color="red">Error: data dir is not writable</font><br><br>';
 ?>
-  <a href="#static">static</a>
-  <fieldset class="box" id="live">
-   <legend>live</legend>
-   <table width="100%">
 <?php
 foreach (array_keys($cache['sources']) as $key) {
-        if ($cache['sources'][$key]['live'] != true)
-                continue;
 ?>
-    <tr>
-     <td style="border-bottom:1pt solid black;">
-      <a href="player.php?src=<?=urlencode($key)?>">
-       <img align="left" src="img.php?h=80&src=<?=urlencode($key)?>">
-      </a>
-      <a href="player.php?src=<?=urlencode($key)?>">
+   <tr>
+    <td style="padding: 0px; border-bottom: 1px solid black;">
+     <a href="player.php?src=<?=urlencode($key)?>">
+      <div style="min-width: 128px; float: left; text-align: center;">
+       <img src="img.php?h=72" class="thumbnail"
+       alt="img.php?h=72&src=<?=urlencode($key)?>">
+      </div>
+      <span style="font-family: Arial; font-size: 1em;">
        <?=$cache['sources'][$key]['title']?>
-      </a>
+      </span>
+     </a>
+     <span style="font-family: Arial; font-size: 1em;">
       <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
        (direct&nbsp;link)
       </a>
-      <br />
-      <div class="tiny">
-       <?=$cache['sources'][$key]['description']?>
-      </div>
-     </td>
-    </tr>
+     </span>
+     <br />
+     <div class="tiny">
+      <?=$cache['sources'][$key]['description']?>
+     </div>
+    </td>
+   </tr>
 <?php
 }
 ?>
-   </table>
-  </fieldset>
-  <a href="#live">live</a>
-  <fieldset class="box" id="static">
-   <legend>static</legend>
-   <table width="100%">
-<?php
-foreach (array_keys($cache['sources']) as $key) {
-        if ($cache['sources'][$key]['live'] == true)
-                continue;
-?>
-    <tr>
-     <td style="border-bottom:1pt solid black;">
-      <a href="player.php?src=<?=urlencode($key)?>">
-       <img align="left" src="img.php?h=80&src=<?=urlencode($key)?>">
-      </a>
-      <a href="player.php?src=<?=urlencode($key)?>">
-       <?=$cache['sources'][$key]['title']?>
-      </a>
-      <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
-       (direct&nbsp;link)
-      </a>
-      <br />
-      <div class="tiny">
-       <?=$cache['sources'][$key]['description']?>
-      </div>
-     </td>
-    </tr>
-<?php
+  </table>
+ <script type="text/javascript">
+function thumbs_up() {
+        document.removeEventListener('scroll', thumbs_up);
+
+        var imgs = document.getElementsByTagName("img");
+        var thumb_down = false;
+
+        for (var i = 0; i < imgs.length; i++) {
+                var img = imgs[i];
+
+                if (img.className != "thumbnail" || !img.alt)
+                        continue;
+
+                var height = window.innerHeight;
+                var rects = img.getClientRects();
+                var visible = false;
+
+                for (var j = 0; j < rects.length; j++)
+                        if ((rects[j].top >= 0 && rects[j].top <= height) ||
+                                        (rects[j].bottom >= 0 &&
+                                         rects[j].bottom <= height))
+                                visible = true;
+
+                if (!visible) {
+                        thumb_down = true;
+                        continue;
+                }
+
+                var alt = img.alt;
+                img.alt = "";
+                img.onload = thumbs_up;
+                img.src = alt;
+
+                break;
+        }
+
+        if (thumb_down && i >= imgs.length)
+                document.addEventListener('scroll', thumbs_up);
 }
-?>
-   </table>
-  </fieldset>
+
+window.onload = thumbs_up;
+ </script>
  </body>
 </html>

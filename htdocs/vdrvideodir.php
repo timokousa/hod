@@ -93,7 +93,7 @@ foreach ($recordings as $recording) {
         if (isset($description))
                 $cache['sources'][$key]['description'] .= '<br>' . $description;
 
-        $cache['sources'][$key]['description'] .= '<br>';
+        $cache['sources'][$key]['description'] .= ' ';
 
         $h = floor($duration / 3600);
         $m = floor(($duration % 3600) / 60);

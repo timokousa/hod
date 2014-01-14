@@ -63,7 +63,7 @@ if ($_SESSION['player'] == 'html5') {
                 ' width="640px" height="360px" src="' . $videosrc . '"' .
                 ' poster="img.php?src=' . urlencode($src) . '"' .
                 ' type="application/x-mpegURL">' .
-                '<a href="' . $videosrc . '">link</a>' .
+                '<a href="' . $videosrc . '">direct link</a>' .
                 '</video>';
 }
 elseif ($_SESSION['player'] == 'vlc') {
@@ -88,10 +88,28 @@ $description = isset($cache['sources'][$src]) ?
  <head>
   <title><?=$title?> - HOD player</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=680px" />
+  <meta name="viewport" content="width=640px" />
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
+ </head>
+ <body style="margin: 0; padding: 0">
+  <div style="width: 640px;">
+   <?=$player?>
+   <form method="post">
+    <div style="float: right">
+     <input type="submit" name="switch" value="switch player" />
+    </div>
+   </form>
+   <div style="font-family: Arial;">
+    <h2><?=$title?></h2>
+    <?=$description?>
+    <br />
+    <br />
+    <a href="<?=$videosrc?>">direct link</a>
+    <div style="float: right"><a href=".">back</a></div>
+   </div>
+  </div>
 <?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript">
 function play_video() {
@@ -101,23 +119,5 @@ function play_video() {
 }
   </script>
 <?php } ?>
- </head>
- <body>
-  <div style="width:670px">
-   <a href=".">back</a>
-   <fieldset class="box">
-    <legend><?=$title?></legend>
-    <?=$player?>
-    <br />
-    <?=$description?>
-    <br />
-    <a href="<?=$videosrc?>">link</a>
-   </fieldset>
-   <form method="post">
-    <div align="right">
-     <input type="submit" name="switch" value="switch player" />
-    </div>
-   </form>
-  </div>
  </body>
 </html>
