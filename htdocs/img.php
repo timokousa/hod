@@ -57,9 +57,7 @@ if ($src && isset($cache['sources'][$src])) {
                         $cache['sources'][$src]['live'] === false) {
                 $file = $workdir . DIRECTORY_SEPARATOR . $src . '.jpg';
 
-                if (file_exists($file))
-                        touch($file);
-                else {
+                if (!file_exists($file)) {
                         touch($file);
 
                         exec('nice ffmpeg' .
