@@ -40,7 +40,7 @@ if (!isset($cache['thumbs_purged']) ||
         foreach ($thumbs as $thumb)
                 if (!in_array(basename($thumb, '.jpg'),
                                         array_keys($cache['sources'])))
-                        unlink($thumb);
+                        @unlink($thumb);
 }
 
 $play = imagecreatefrompng('play.png');
