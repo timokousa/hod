@@ -20,12 +20,72 @@
 
 include_once 'rc.php';
 
+$df_threshold = 2147483648;
+
 $file = isset($_GET['file']) ? $_GET['file'] : false;
 $key = isset($_GET['key']) ? $_GET['key'] : false;
 $src = isset($_GET['src']) ? $_GET['src'] : false;
 
 if ($src && !isset($cache['sources']))
         include_once 'sources.php';
+
+if (is_dir('data') && disk_free_space('data') < $df_threshold) {
+        $dirs = glob('data' . DIRECTORY_SEPARATOR . '*',
+                        GLOB_ONLYDIR | GLOB_NOSORT);
+
+        while (disk_free_space('data') < $df_threshold) {
+                $oldest = false;
+                $oldestmtime = time() - 600;
+
+                foreach ($dirs as $i => $dir) {
+                        $tmp = basename($dir);
+
+                        if (!isset($cache['sources'][$tmp]) ||
+                                        !file_exists($workdir .
+                                                DIRECTORY_SEPARATOR . $tmp .
+                                                '.timestamp')) {
+                                $files = glob($dir . DIRECTORY_SEPARATOR . '*');
+
+                                foreach ($files as $file)
+                                        @unlink($file);
+
+                                @rmdir($dir);
+
+                                if (file_exists($workdir . DIRECTORY_SEPARATOR .
+                                                        $tmp . '.timestamp'))
+                                        @unlink($workdir . DIRECTORY_SEPARATOR .
+                                                        $tmp . '.timestamp');
+
+                                if (file_exists($workdir . DIRECTORY_SEPARATOR .
+                                                        $tmp . '.streams'))
+                                        @unlink($workdir . DIRECTORY_SEPARATOR .
+                                                        $tmp . '.streams');
+
+                                if (file_exists($workdir . DIRECTORY_SEPARATOR .
+                                                        $tmp . '.key'))
+                                        @unlink($workdir . DIRECTORY_SEPARATOR .
+                                                        $tmp . '.key');
+
+                                unset($dirs[$i]);
+                                continue 2;
+                        }
+
+                        $mtime = filemtime($workdir . DIRECTORY_SEPARATOR .
+                                        $tmp . '.timestamp');
+
+                        if ($mtime < $oldestmtime) {
+                                $oldest = $tmp;
+                                $oldestmtime = $mtime;
+                        }
+                }
+
+                if ($oldest)
+                        @unlink($workdir . DIRECTORY_SEPARATOR .
+                                        $oldest . '.timestamp');
+                else
+                        break;
+        }
+}
 
 if ($src && isset($cache['sources'][$src])) {
         if (!is_dir($workdir))
