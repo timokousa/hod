@@ -109,7 +109,7 @@ fi
 
 test -s /etc/hod.conf && source /etc/hod.conf
 
-test -z "${WORKDIR}" && WORKDIR='/tmp/hod'
+test -z "${WORKDIR}" && WORKDIR='/var/lib/hod'
 
 test -z "${WIFI_SIZE}" && WIFI_SIZE="640x360"
 test -z "${CELL_SIZE}" && CELL_SIZE="480x270"

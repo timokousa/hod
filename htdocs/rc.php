@@ -18,7 +18,7 @@
    along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-$workdir = '/tmp/hod';
+$workdir = '/var/lib/hod';
 $key_force_https = false;
 
 ini_set('session.use_only_cookies', 0);
