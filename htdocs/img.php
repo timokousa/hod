@@ -26,7 +26,7 @@ $src = isset($_GET['src']) ? $_GET['src'] : false;
 $width = (isset($_GET['w']) && is_numeric($_GET['w'])) ? $_GET['w'] : false;
 $height = (isset($_GET['h']) && is_numeric($_GET['h'])) ? $_GET['h'] : false;
 
-if ($src && !isset($cache['sources']))
+if (!isset($cache['sources']))
         include_once 'sources.php';
 
 if (!isset($cache['thumbs_purged']) ||
