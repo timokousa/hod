@@ -91,7 +91,7 @@ foreach (array_keys($cache['sources']) as $key) {
    <tr>
     <td style="padding: 0px; border-bottom: 1px solid black;">
      <a href="player.php?src=<?=urlencode($key)?>">
-      <div style="min-width: 128px; float: left; text-align: center;">
+      <div style="min-width: 128px; height: 72px; float: left; text-align: center;">
        <img src="img.php?h=72" class="thumbnail"
        alt="img.php?h=72&src=<?=urlencode($key)?>">
       </div>
