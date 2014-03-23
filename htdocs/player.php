@@ -61,7 +61,7 @@ $player = '';
 if ($_SESSION['player'] == 'html5') {
         $player = '<video autoplay onClick="play_video();" id="video"' .
                 ' width="640px" height="360px" src="' . $videosrc . '"' .
-                ' poster="img.php?src=' . urlencode($src) . '"' .
+                ' poster="play.png"' .
                 ' type="application/x-mpegURL">' .
                 '<a href="' . $videosrc . '">direct link</a>' .
                 '</video>';
@@ -112,8 +112,10 @@ $description = isset($cache['sources'][$src]) ?
   </div>
 <?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript">
+var video = document.getElementById('video');
+video.poster = "img.php?src=<?=urlencode($src)?>";
+
 function play_video() {
-        var video = document.getElementById('video');
         video.play();
         video.webkitEnterFullScreen();
 }
