@@ -20,6 +20,8 @@
 
 $workdir = '/var/lib/hod';
 $key_force_https = false;
+$language = 'fin';
+$burn_subs = true;
 
 ini_set('session.use_only_cookies', 0);
 date_default_timezone_set('Europe/Helsinki');

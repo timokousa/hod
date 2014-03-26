@@ -17,7 +17,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 
-TEMP=$(getopt -n ${0} -o c:efhk:K:n:N:p:sSt:u:U: -- "${@}")
+TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:p:sSt:u:U: -- "${@}")
 if [ ${?} != 0 ]; then
 	echo "Usage: ${0} [options] input"
 	exit 1
@@ -48,6 +48,7 @@ while true; do
 			echo " -f            force overwrite of output files"
 			echo " -k <keyfile>  keyfile for openssl aes encryption"
 			echo " -K <url>      url for aes key in the playlist"
+			echo " -l <lang>     preferred language for audio / subtitles"
 			echo " -n <count>    keep <count> segments (0 keeps all)"
 			echo " -N <int>      value to pass for nice -n"
 			echo " -p <prefix>   prefix for all files to be created"
@@ -64,6 +65,9 @@ while true; do
 		-K)
 			SEG_OPTS="${SEG_OPTS} -K ${2}"
 			shift 2 ;;
+		-l)
+			LANG="${2}"
+			shift 2 ;;
 		-n)
 			OPT_n="-n ${2}"
 			shift 2 ;;
@@ -78,7 +82,7 @@ while true; do
 			SEG_OPTS="${SEG_OPTS} -s"
 			shift ;;
 		-S)
-			SUBTITLES="-filter_complex [0:v][0:s:0]overlay"
+			SUBTITLES="true"
 			shift ;;
 		-t)
 			SEG_OPTS="${SEG_OPTS} -t ${2}"
@@ -130,16 +134,53 @@ test -d ${WORKDIR} || mkdir -p ${WORKDIR}
 
 test -s "${WORKDIR}/${PREFIX}.streams" || ffprobe -loglevel fatal -show_streams "${INPUT}" > "${WORKDIR}/${PREFIX}.streams"
 
-test -n "${SUBTITLES}" && grep -q "codec_name=dvbsub" "${WORKDIR}/${PREFIX}.streams" || unset SUBTITLES
+while read line; do
+	if [[ "${line}" == "[STREAM]" ]]; then
+		unset index;
+		unset codec_type;
+		unset codec_name;
+		unset language;
+		continue;
+	fi
 
-if ! grep -q "codec_type=video" "${WORKDIR}/${PREFIX}.streams"; then
+	[[ "${line}" == "index="* ]] && index="${line##index=}"
+	[[ "${line}" == "codec_type="* ]] && codec_type="${line##codec_type=}"
+	[[ "${line}" == "codec_name="* ]] && codec_name="${line##codec_name=}"
+	[[ "${line}" == "TAG:language="* ]] && language="${line##TAG:language=}"
+
+	if [[ "${line}" == "[/STREAM]" ]]; then
+		[[ "${codec_type}" == "video" ]] && test -z "${video_index}" && video_index="${index}"
+
+		if [[ "${codec_type}" == "audio" ]]; then
+			test -z "${audio_index}" && audio_index="${index}"
+			test -n "${LANG}" && [[ "${language}" == "${LANG}" ]] && audio_index="${index}"
+		fi
+
+		if test -n "${SUBTITLES}" && [[ "${codec_name}" == "dvbsub" ]]; then
+			if [ -n "${LANG}" ]; then
+				[[ "${language}" == "${LANG}" ]] && sub_index="${index}"
+			else
+				test -z "${sub_index}" && sub_index="${index}"
+			fi
+		fi
+	fi
+done < "${WORKDIR}/${PREFIX}.streams"
+
+if [ -n "${video_index}" ]; then
+	if [ -n "${sub_index}" ]; then
+		VIDEO_MAP="-filter_complex [0:${video_index}][0:${sub_index}]overlay"
+	else
+		VIDEO_MAP="-map 0:${video_index}"
+	fi
+else
 	WIFI_FFOPT=""
 	CELL_FFOPT=""
 fi
 
-if grep -q "codec_type=audio" "${WORKDIR}/${PREFIX}.streams"; then
+if [ -n "${audio_index}" ]; then
 	WIFI_CODEC="${WIFI_CODEC}, ${AUDIO_CODEC}"
 	CELL_CODEC="${CELL_CODEC}, ${AUDIO_CODEC}"
+	AUDIO_MAP="-map 0:${audio_index}"
 else
 	AUDIO_FFOPT=""
 	AUDIO_BW="0"
@@ -173,8 +214,8 @@ if [ -n "${WIFI_FFOPT}" ]; then
 	echo "#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=$(((WIFI_BW + AUDIO_BW) * 110 / 100)), CODECS=\"${WIFI_CODEC}\", RESOLUTION=${WIFI_SIZE}" >> "${DATADIR}/${PREFIX}.m3u8.part"
 	echo "${URL_PREFIX}${PREFIX}.wifi.m3u8" >> "${DATADIR}/${PREFIX}.m3u8.part"
 
-	FFMPEG_OPTS="${FFMPEG_OPTS} ${SUBTITLES} ${WIFI_FFOPT}"
-	test -n "${AUDIO_FFOPT}" && FFMPEG_OPTS="${FFMPEG_OPTS} ${AUDIO_FFOPT}"
+	FFMPEG_OPTS="${FFMPEG_OPTS} ${VIDEO_MAP} ${WIFI_FFOPT}"
+	test -n "${AUDIO_FFOPT}" && FFMPEG_OPTS="${FFMPEG_OPTS} ${AUDIO_MAP} ${AUDIO_FFOPT}"
 	FFMPEG_OPTS="${FFMPEG_OPTS} -f mpegts -y ${WORKDIR}/${PREFIX}.wifi.fifo"
 
 	segmenter ${SEG_OPTS} ${OPT_n} -p "${DATADIR}/${PREFIX}.wifi.m3u8" "${DATADIR}/${PREFIX}.wifi.%u.ts" < "${WORKDIR}/${PREFIX}.wifi.fifo" &
@@ -184,8 +225,8 @@ if [ -n "${CELL_FFOPT}" ]; then
 	echo "#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=$(((CELL_BW + AUDIO_BW) * 110 / 100)), CODECS=\"${CELL_CODEC}\", RESOLUTION=${CELL_SIZE}" >> "${DATADIR}/${PREFIX}.m3u8.part"
 	echo "${URL_PREFIX}${PREFIX}.cell.m3u8" >> "${DATADIR}/${PREFIX}.m3u8.part"
 
-	FFMPEG_OPTS="${FFMPEG_OPTS} ${SUBTITLES} ${CELL_FFOPT}"
-	test -n "${AUDIO_FFOPT}" && FFMPEG_OPTS="${FFMPEG_OPTS} ${AUDIO_FFOPT}"
+	FFMPEG_OPTS="${FFMPEG_OPTS} ${VIDEO_MAP} ${CELL_FFOPT}"
+	test -n "${AUDIO_FFOPT}" && FFMPEG_OPTS="${FFMPEG_OPTS} ${AUDIO_MAP} ${AUDIO_FFOPT}"
 	FFMPEG_OPTS="${FFMPEG_OPTS} -f mpegts -y ${WORKDIR}/${PREFIX}.cell.fifo"
 
 	segmenter ${SEG_OPTS} ${OPT_n} -p "${DATADIR}/${PREFIX}.cell.m3u8" "${DATADIR}/${PREFIX}.cell.%u.ts" < "${WORKDIR}/${PREFIX}.cell.fifo" &
@@ -195,7 +236,7 @@ if [ -n "${AUDIO_FFOPT}" ]; then
 	echo "#EXT-X-STREAM-INF:PROGRAM-ID=1, BANDWIDTH=$((AUDIO_BW * 110 / 100)), CODECS=\"${AUDIO_CODEC}\"" >> "${DATADIR}/${PREFIX}.m3u8.part"
 	echo "${URL_PREFIX}${PREFIX}.audio.m3u8" >> "${DATADIR}/${PREFIX}.m3u8.part"
 
-	FFMPEG_OPTS="${FFMPEG_OPTS} -vn ${AUDIO_FFOPT} -f mpegts -y ${WORKDIR}/${PREFIX}.audio.fifo"
+	FFMPEG_OPTS="${FFMPEG_OPTS} -vn ${AUDIO_MAP} ${AUDIO_FFOPT} -f mpegts -y ${WORKDIR}/${PREFIX}.audio.fifo"
 
 	segmenter ${SEG_OPTS} ${OPT_n} -p "${DATADIR}/${PREFIX}.audio.m3u8" "${DATADIR}/${PREFIX}.audio.%u.ts" < "${WORKDIR}/${PREFIX}.audio.fifo" &
 fi

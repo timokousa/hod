@@ -114,6 +114,12 @@ if ($src && isset($cache['sources'][$src])) {
                                         '&src=' . urlencode($src) .
                                         '&file=');
 
+                if ($language)
+                        $opts .= ' -l ' . escapeshellarg($language);
+
+                if ($burn_subs)
+                        $opts .= ' -S';
+
                 if (isset($cache['sources'][$src]['live']) &&
                                 $cache['sources'][$src]['live']) {
                         $opts .= ' -c ' . escapeshellarg($tsfile) .
