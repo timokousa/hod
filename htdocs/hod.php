@@ -20,8 +20,6 @@
 
 include_once 'rc.php';
 
-$df_threshold = 2147483648;
-
 $file = isset($_GET['file']) ? $_GET['file'] : false;
 $key = isset($_GET['key']) ? $_GET['key'] : false;
 $src = isset($_GET['src']) ? $_GET['src'] : false;

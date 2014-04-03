@@ -22,6 +22,7 @@ $workdir = '/var/lib/hod';
 $key_force_https = false;
 $language = 'fin';
 $burn_subs = true;
+$df_threshold = 2147483648;
 
 ini_set('session.use_only_cookies', 0);
 date_default_timezone_set('Europe/Helsinki');
