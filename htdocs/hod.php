@@ -110,7 +110,11 @@ if ($src && isset($cache['sources'][$src])) {
                                         $_SERVER['SCRIPT_NAME'] .
                                         '?SESSION_PLACEHOLDER' .
                                         '&src=' . urlencode($src) .
-                                        '&file=');
+                                        '&file=') .
+                        ' -U ' . escapeshellarg('http://' .
+                                        $_SERVER['HTTP_HOST'] .
+                                        dirname($_SERVER['SCRIPT_NAME']) .
+                                        '/data/' . urlencode($src) . '/');
 
                 if ($language)
                         $opts .= ' -l ' . escapeshellarg($language);
