@@ -19,13 +19,21 @@
 */
 
 $workdir = '/var/lib/hod';
-$key_force_https = false;
+$force_https = false;
 $language = 'fin';
 $burn_subs = true;
 $df_threshold = 2147483648;
+date_default_timezone_set('Europe/Helsinki');
+
+if ($force_https && !isset($_SERVER['HTTPS'])) {
+        header('Location: https://' .
+                        $_SERVER['HTTP_HOST'] .
+                        $_SERVER['REQUEST_URI']);
+
+        exit;
+}
 
 ini_set('session.use_only_cookies', 0);
-date_default_timezone_set('Europe/Helsinki');
 
 session_name('hod');
 session_start();

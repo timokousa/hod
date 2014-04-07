@@ -103,18 +103,13 @@ if ($src && isset($cache['sources'][$src])) {
                         ' -p ' . escapeshellarg('data' .
                                         DIRECTORY_SEPARATOR . $src .
                                         DIRECTORY_SEPARATOR . $src) .
-                        ' -u ' . escapeshellarg(
-                                        (isset($_SERVER['HTTPS']) ?
-                                         'https://' : 'http://') .
-                                        $_SERVER['HTTP_HOST'] .
-                                        $_SERVER['SCRIPT_NAME'] .
-                                        '?SESSION_PLACEHOLDER' .
+                        ' -u ' . escapeshellarg('PROTOCOL://HOST/' .
+                                        basename($_SERVER['SCRIPT_NAME']) .
+                                        '?SESSION' .
                                         '&src=' . urlencode($src) .
                                         '&file=') .
-                        ' -U ' . escapeshellarg('http://' .
-                                        $_SERVER['HTTP_HOST'] .
-                                        dirname($_SERVER['SCRIPT_NAME']) .
-                                        '/data/' . urlencode($src) . '/');
+                        ' -U ' . escapeshellarg('http://HOST/data/' .
+                                        urlencode($src) . '/');
 
                 if ($language)
                         $opts .= ' -l ' . escapeshellarg($language);
@@ -135,13 +130,9 @@ if ($src && isset($cache['sources'][$src])) {
                                 $cache['sources'][$src]['encrypt']) {
                         $opts .= ' -k ' . escapeshellarg($workdir .
                                         DIRECTORY_SEPARATOR . $src . '.key') .
-                                ' -K ' . escapeshellarg(
-                                                ((isset($_SERVER['HTTPS']) ||
-                                                  $key_force_https) ?
-                                                 'https://' : 'http://') .
-                                                $_SERVER['HTTP_HOST'] .
-                                                $_SERVER['SCRIPT_NAME'] .
-                                                '?SESSION_PLACEHOLDER' .
+                                ' -K ' . escapeshellarg('PROTOCOL://HOST/' .
+                                                basename($_SERVER['SCRIPT_NAME']) .
+                                                '?SESSION' .
                                                 '&key=' . urlencode($src));
                 }
 
@@ -167,8 +158,24 @@ if ($file && $src) {
         if (preg_match('/\.m3u8$/i', $file) && file_exists($plfile)) {
                 ob_start();
 
-                echo str_replace('?SESSION_PLACEHOLDER&',
-                                '?' . session_name() . '=' . session_id() . '&',
+                $protocol = (isset($_SERVER['HTTPS']) || $force_https) ?
+                        'https://' : 'http://';
+
+                $host = '://' . $_SERVER['HTTP_HOST'] .
+                        dirname($_SERVER['SCRIPT_NAME']) . '/';
+
+                $session = '?' . session_name() . '=' . session_id() . '&';
+
+                echo str_replace(array(
+                                        'PROTOCOL://',
+                                        '://HOST/',
+                                        '?SESSION&'
+                                      ),
+                                array(
+                                        $protocol,
+                                        $host,
+                                        $session
+                                     ),
                                 file_get_contents($plfile));
 
                 header('Cache-Control: no-cache, must-revalidate');
@@ -182,7 +189,7 @@ if ($file && $src) {
         }
 }
 
-if ($key && (!$key_force_https || isset($_SERVER['HTTPS']))) {
+if ($key) {
         $keyfile = $workdir . DIRECTORY_SEPARATOR . $key . '.key';
 
         if (file_exists($keyfile)) {
