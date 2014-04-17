@@ -71,7 +71,8 @@ elseif ($_SESSION['player'] == 'vlc') {
                 ' codebase="http://download.videolan.org/pub/videolan/vlc/last/win32/axvlc.cab">' .
                 '<embed type="application/x-vlc-plugin"' .
                 ' pluginspage="http://www.videolan.org"' .
-                ' controls="' . (isset($cache['sources'][$src]['live']) ?
+                ' toolbar="' . ((isset($cache['sources'][$src]['live']) &&
+                                $cache['sources'][$src]['live']) ?
                         "false" : "true") . '"' .
                 ' width="640px" height="360px" src="' . $videosrc . '" />' .
                 '</object>';
