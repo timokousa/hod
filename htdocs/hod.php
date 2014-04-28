@@ -109,7 +109,8 @@ if ($src && isset($cache['sources'][$src])) {
                                         '&src=' . urlencode($src) .
                                         '&file=') .
                         ' -U ' . escapeshellarg('http://HOST/data/' .
-                                        urlencode($src) . '/');
+                                        urlencode($src) . '/') .
+                        ' -w ' . escapeshellarg($workdir);
 
                 if ($language)
                         $opts .= ' -l ' . escapeshellarg($language);

@@ -17,7 +17,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 
-TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:p:sSt:u:U: -- "${@}")
+TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:p:sSt:u:U:w: -- "${@}")
 if [ ${?} != 0 ]; then
 	echo "Usage: ${0} [options] input"
 	exit 1
@@ -57,6 +57,7 @@ while true; do
 			echo " -t <sec>      target duration of a segment (default: 10)"
 			echo " -u <url>      url prefix for playlists in the abr playlist"
 			echo " -U <url>      url prefix for ts-files in the playlist"
+			echo " -w <dir>      directory to store temporary files (default: .)"
 			echo
 			exit ;;
 		-k)
@@ -92,6 +93,9 @@ while true; do
 			shift 2 ;;
 		-U)
 			SEG_OPTS="${SEG_OPTS} -U ${2}"
+			shift 2 ;;
+		-w)
+			WORKDIR="${2}"
 			shift 2 ;;
 		--)
 			shift
@@ -131,7 +135,7 @@ else
 	FFOPT[wifi]="-vf yadif -c:v libx264 -preset ultrafast -profile:v baseline -level 3.1 -s ${SIZE[wifi]} -b:v ${BW[wifi]} -minrate ${BW[wifi]} -maxrate ${BW[wifi]} -bufsize $((BW[wifi] / 2)) -r 25 -x264opts keyint=80"
 fi
 
-test -z "${WORKDIR}" && WORKDIR='/var/lib/hod'
+test -z "${WORKDIR}" && WORKDIR='.'
 test -d ${WORKDIR} || mkdir -p ${WORKDIR}
 
 test -s "${WORKDIR}/${PREFIX}.streams" || ffprobe -loglevel fatal -show_streams "${INPUT}" > "${WORKDIR}/${PREFIX}.streams"
