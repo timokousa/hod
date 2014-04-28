@@ -23,6 +23,8 @@ $force_https = false;
 $language = 'fin';
 $burn_subs = true;
 $df_threshold = 2147483648;
+$thumbnail_position = '00:05:00';
+
 date_default_timezone_set('Europe/Helsinki');
 
 if ($force_https && !isset($_SERVER['HTTPS'])) {
