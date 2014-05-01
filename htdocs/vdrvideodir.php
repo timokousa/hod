@@ -82,7 +82,7 @@ foreach ($recordings as $recording) {
         $cache['sources'][$key]['live'] = false;
         $cache['sources'][$key]['encrypt'] = true;
         $cache['sources'][$key]['title'] = $title;
-        $cache['sources'][$key]['uri'] = 'concat:' . implode('|', $files);
+        $cache['sources'][$key]['input'] = 'concat:' . implode('|', $files);
 
         if (isset($subtitle))
                 $cache['sources'][$key]['description'] =

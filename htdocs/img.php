@@ -60,7 +60,7 @@ if ($src && isset($cache['sources'][$src])) {
 
                         exec('nice ffmpeg' .
                                         ' -i ' . escapeshellarg(
-                                                $cache['sources'][$src]['uri']) .
+                                                $cache['sources'][$src]['input']) .
                                         ' -ss ' . $thumbnail_position .
                                         ' -vframes 1' .
                                         ' -vf thumbnail,scale=iw*sar/2:ih/2' .

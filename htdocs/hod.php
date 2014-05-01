@@ -139,7 +139,7 @@ if ($src && isset($cache['sources'][$src])) {
 
                 exec('hod' . $opts .
                                 ' ' . escapeshellarg(
-                                        $cache['sources'][$src]['uri']) .
+                                        $cache['sources'][$src]['input']) .
                                 ' > /dev/null 2> /dev/null &');
         }
 }

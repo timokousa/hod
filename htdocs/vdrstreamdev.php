@@ -34,7 +34,7 @@ foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
                 $cache['sources'][$key]['encrypt'] = true;
                 $cache['sources'][$key]['live'] = true;
                 $cache['sources'][$key]['title'] = $name;
-                $cache['sources'][$key]['uri'] = rtrim($line);
+                $cache['sources'][$key]['input'] = rtrim($line);
 
                 $logofile = $logodir . DIRECTORY_SEPARATOR .
                         preg_replace('/^[0-9]* /', '', $name) .

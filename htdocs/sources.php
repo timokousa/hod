@@ -22,13 +22,13 @@ include_once 'rc.php';
 
 #$cache['sources']['example']['title'] = 'example';
 #$cache['sources']['example']['description'] = 'example live source';
-#$cache['sources']['example']['uri'] = 'udp://239.255.0.1:1234';
+#$cache['sources']['example']['input'] = 'udp://239.255.0.1:1234';
 #$cache['sources']['example']['live'] = true;
 #$cache['sources']['example']['encrypt'] = true;
 
 #$cache['sources']['example2']['title'] = 'example2';
 #$cache['sources']['example2']['description'] = 'example static source';
-#$cache['sources']['example2']['uri'] = '/var/video/file.mkv';
+#$cache['sources']['example2']['input'] = '/var/video/file.mkv';
 #$cache['sources']['example2']['live'] = false;
 #$cache['sources']['example2']['encrypt'] = true;
 
