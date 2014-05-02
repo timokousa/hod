@@ -49,7 +49,7 @@ $session = session_name() . '=' . session_id();
 ?>
 <html>
  <head>
-  <title>HOD</title>
+  <title><?=isset($_GET['q']) ? htmlentities($_GET['q']) . ' - ' : ''?>HOD</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, height=device-height,
   initial-scale=1" />
