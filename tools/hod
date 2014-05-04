@@ -138,7 +138,7 @@ fi
 test -z "${WORKDIR}" && WORKDIR='.'
 test -d ${WORKDIR} || mkdir -p ${WORKDIR}
 
-test -s "${WORKDIR}/${PREFIX}.streams" || ffprobe -loglevel fatal -show_streams "${INPUT}" > "${WORKDIR}/${PREFIX}.streams"
+test -s "${WORKDIR}/${PREFIX}.streams" || timeout -s 9 60 ffprobe -loglevel fatal -show_streams "${INPUT}" > "${WORKDIR}/${PREFIX}.streams"
 
 while read line; do
 	if [[ "${line}" == "[STREAM]" ]]; then
