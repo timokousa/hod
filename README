@@ -7,12 +7,16 @@ ABOUT
  A set of scripts and a segmenter to generate HLS from various sources when
  requested. Complete with transcoding, AES encryption and simple authentication.
 
+ Transcoding is started on the first m3u8 request. Live transcoding is stopped
+ after a brief inactivity. Non-live transcodings are kept on disk until disk
+ free space goes below defined limit.
+
  I use this to stream VDR channels and recordings to my Android phone.
 
 
 REQUIREMENTS
 
- Bash & PHP for the scripts.
+ Bash4 & PHP for the scripts.
  FFmpeg for transcoding.
  OpenSSL for AES encryption.
 
@@ -26,8 +30,8 @@ INSTALL
  Optionally copy the transcoding config file to /etc and edit as needed.
 
  Put the files in htdocs to appropriate place for webapps and make sure the
- data dir is writable by the http daemon. Edit rc.php, auth.php, sources.php
- and vdr*.php as needed.
+ data dir is writable by the daemon running the php. Edit rc.php, auth.php,
+ sources.php and vdr*.php as needed.
 
 
 CONTACT
