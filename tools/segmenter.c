@@ -354,8 +354,10 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
         }
 
-        signal(SIGALRM, bailout_plan);
-        alarm(seg_len * 3);
+        if (count) {
+                signal(SIGALRM, bailout_plan);
+                alarm(seg_len * 3);
+        }
 
         if (verbose)
                 printf("writing %s ..\n", fname);
@@ -453,7 +455,8 @@ int main(int argc, char *argv[])
                         last_seg = cur_seg;
 
                 if (limbo && !pesses) {
-                        alarm(seg_len * 2);
+                        if (count)
+                                alarm(seg_len * 2);
 
                         if (keepalive && count &&
                                         (stat(keepalive, &sb) == -1 ||
