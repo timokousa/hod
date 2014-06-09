@@ -174,7 +174,7 @@ done < "${WORKDIR}/${PREFIX}.streams"
 
 if [ -n "${video_index}" ]; then
 	if [ -n "${sub_index}" ]; then
-		MAP_VIDEO="-filter_complex [0:${video_index}][0:${sub_index}]overlay"
+		MAP_VIDEO="-filter_complex [0:${video_index}][0:${sub_index}]overlay[out] -map [out]"
 	else
 		MAP_VIDEO="-map 0:${video_index}"
 	fi
