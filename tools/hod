@@ -120,6 +120,8 @@ declare -A BW SIZE CODEC FFOPT
 if [ -s /etc/hod.conf ]; then
 	source /etc/hod.conf
 else
+	FILTER="yadif"
+
 	BW_AUDIO="64000"
 	CODEC_AUDIO="mp4a.40.2"
 	FFOPT_AUDIO="-c:a libfaac -b:a ${BW_AUDIO} -ac 2"
@@ -127,12 +129,12 @@ else
 	BW[cell]="400000"
 	SIZE[cell]="480x270"
 	CODEC[cell]="avc1.42001e"
-	FFOPT[cell]="-vf yadif -c:v libx264 -preset ultrafast -profile:v baseline -level 3.0 -s ${SIZE[cell]} -b:v ${BW[cell]} -minrate ${BW[cell]} -maxrate ${BW[cell]} -bufsize $((BW[cell] / 2)) -r 12.5 -x264opts keyint=40"
+	FFOPT[cell]="-c:v libx264 -preset ultrafast -profile:v baseline -level 3.0 -s ${SIZE[cell]} -b:v ${BW[cell]} -minrate ${BW[cell]} -maxrate ${BW[cell]} -bufsize $((BW[cell] / 2)) -r 12.5 -x264opts keyint=40"
 
 	BW[wifi]="1200000"
 	SIZE[wifi]="640x360"
 	CODEC[wifi]="avc1.42001f"
-	FFOPT[wifi]="-vf yadif -c:v libx264 -preset ultrafast -profile:v baseline -level 3.1 -s ${SIZE[wifi]} -b:v ${BW[wifi]} -minrate ${BW[wifi]} -maxrate ${BW[wifi]} -bufsize $((BW[wifi] / 2)) -r 25 -x264opts keyint=80"
+	FFOPT[wifi]="-c:v libx264 -preset ultrafast -profile:v baseline -level 3.1 -s ${SIZE[wifi]} -b:v ${BW[wifi]} -minrate ${BW[wifi]} -maxrate ${BW[wifi]} -bufsize $((BW[wifi] / 2)) -r 25 -x264opts keyint=80"
 fi
 
 test -z "${WORKDIR}" && WORKDIR='.'
@@ -174,9 +176,17 @@ done < "${WORKDIR}/${PREFIX}.streams"
 
 if [ -n "${video_index}" ]; then
 	if [ -n "${sub_index}" ]; then
-		MAP_VIDEO="-filter_complex [0:${video_index}][0:${sub_index}]overlay[out] -map [out]"
+		if [ -n "${FILTER}" ]; then
+			MAP_VIDEO="-filter_complex [0:${video_index}]${FILTER}[video];[video][0:${sub_index}]overlay[out] -map [out]"
+		else
+			MAP_VIDEO="-filter_complex [0:${video_index}][0:${sub_index}]overlay[out] -map [out]"
+		fi
 	else
-		MAP_VIDEO="-map 0:${video_index}"
+		if [ -n "${FILTER}" ]; then
+			MAP_VIDEO="-filter:v ${FILTER} -map 0:${video_index}"
+		else
+			MAP_VIDEO="-map 0:${video_index}"
+		fi
 	fi
 else
 	unset FFOPT
