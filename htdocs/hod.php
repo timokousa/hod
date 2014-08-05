@@ -150,6 +150,8 @@ if ($file && $src) {
         $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
 
         for ($i = 0; $i < 30; $i++) {
+                clearstatcache();
+
                 if (file_exists($plfile) || !file_exists($tsfile))
                         break;
 
