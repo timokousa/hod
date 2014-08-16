@@ -24,6 +24,8 @@ $vdrhost = 'localhost';
 $logodir = '/usr/share/vdr/channel-logos';
 $logoextension = 'xpm';
 
+$key = false;
+
 foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
         if (!rtrim($line))
                 continue;
@@ -45,44 +47,49 @@ foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
         }
 }
 
-exec('svdrpsend -d ' . $vdrhost . ' lste now', $epg);
-foreach ($epg as $line) {
-        if (preg_match('/^215-C ([^ ]*) /', $line, $matches))
-                $key = $matches[1];
-        elseif (preg_match('/^215-E \d+ (\d+)/', $line, $matches))
-                $time = $matches[1];
-        elseif (preg_match('/^215-T (.*)$/', $line, $matches))
-                $now[$key] = date('H:i ', $time) . $matches[1];
-}
-
-unset($epg);
-
-exec('svdrpsend -d ' . $vdrhost . ' lste next', $epg);
-foreach ($epg as $line) {
-        if (preg_match('/^215-C ([^ ]*) /', $line, $matches))
-                $key = $matches[1];
-        elseif (preg_match('/^215-E \d+ (\d+)/', $line, $matches)) {
-                $time = $matches[1];
-                if ($time > time() && (!isset($cache['expires']) ||
-                                        $cache['expires'] > $time))
-                        $cache['expires'] = $time;
+if ($key) {
+        exec('svdrpsend -d ' . $vdrhost . ' lste now', $epg);
+        foreach ($epg as $line) {
+                if (preg_match('/^215-C ([^ ]*) /', $line, $matches))
+                        $key = $matches[1];
+                elseif (preg_match('/^215-E \d+ (\d+)/', $line, $matches))
+                        $time = $matches[1];
+                elseif (preg_match('/^215-T (.*)$/', $line, $matches))
+                        $now[$key] = date('H:i ', $time) . $matches[1];
         }
-        elseif (preg_match('/^215-T (.*)$/', $line, $matches))
-                $next[$key] = date('H:i ', $time) . $matches[1];
+
+        unset($epg);
+
+        exec('svdrpsend -d ' . $vdrhost . ' lste next', $epg);
+        foreach ($epg as $line) {
+                if (preg_match('/^215-C ([^ ]*) /', $line, $matches))
+                        $key = $matches[1];
+                elseif (preg_match('/^215-E \d+ (\d+)/', $line, $matches)) {
+                        $time = $matches[1];
+                        if ($time > time() && (!isset($cache['expires']) ||
+                                                $cache['expires'] > $time))
+                                $cache['expires'] = $time;
+                }
+                elseif (preg_match('/^215-T (.*)$/', $line, $matches))
+                        $next[$key] = date('H:i ', $time) . $matches[1];
+        }
+
+        foreach (array_keys($cache['sources']) as $key) {
+                $cache['sources'][$key]['description'] = '';
+
+                if (isset($now[$key]))
+                        $cache['sources'][$key]['description'] .= '<b>Now: ' .
+                                $now[$key] .  '</b><br>';
+
+                if (isset($next[$key]))
+                        $cache['sources'][$key]['description'] .= 'Next: ' .
+                                $next[$key];
+        }
+
+        if (!isset($cache['expires']))
+                $cache['expires'] = time() + 1800;
 }
-
-foreach (array_keys($cache['sources']) as $key) {
-        $cache['sources'][$key]['description'] = '';
-
-        if (isset($now[$key]))
-                $cache['sources'][$key]['description'] .= '<b>Now: ' .
-                        $now[$key] .  '</b><br>';
-
-        if (isset($next[$key]))
-                $cache['sources'][$key]['description'] .= 'Next: ' . $next[$key];
-}
-
-if (!isset($cache['expires']))
-        $cache['expires'] = time() + 1800;
+else
+        $cache['expires'] = 1;
 
 ?>
