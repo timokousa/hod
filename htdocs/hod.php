@@ -103,8 +103,8 @@ if ($src && isset($cache['sources'][$src])) {
                                                         DIRECTORY_SEPARATOR .
                                                         '*');
 
-                                        foreach ($files as $file)
-                                                @unlink($file);
+                                        foreach ($files as $rmfile)
+                                                @unlink($rmfile);
 
                                         @rmdir($dir);
 
