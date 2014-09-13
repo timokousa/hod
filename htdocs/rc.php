@@ -35,11 +35,6 @@ if ($force_https && !isset($_SERVER['HTTPS'])) {
         exit;
 }
 
-ini_set('session.use_only_cookies', 0);
-
-session_name('hod');
-session_start();
-
 include_once 'auth.php';
 
 $cache = array();

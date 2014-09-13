@@ -23,6 +23,10 @@ $passwd = array(
                 array('user2', 'password2'),
                );
 
+ini_set('session.use_only_cookies', 0);
+session_name('hod');
+session_start();
+
 if (isset($_REQUEST['logout'])) {
         $_SESSION = array();
 
