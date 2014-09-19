@@ -17,7 +17,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 
-TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:p:sSt:u:U:w: -- "${@}")
+TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:p:rsSt:u:U:w: -- "${@}")
 if [ ${?} != 0 ]; then
 	echo "Usage: ${0} [options] input"
 	exit 1
@@ -52,6 +52,7 @@ while true; do
 			echo " -n <count>    keep <count> segments (0 keeps all)"
 			echo " -N <int>      value to pass for nice -n"
 			echo " -p <prefix>   prefix for all files to be created"
+			echo " -r            randomize every IV"
 			echo " -s            use the system time instead of PTS"
 			echo " -S            burn dvbsubtitles"
 			echo " -t <sec>      target duration of a segment (default: 10)"
@@ -79,6 +80,9 @@ while true; do
 			PREFIX=$(basename ${2})
 			DATADIR="$(dirname ${2})"
 			shift 2 ;;
+		-r)
+			SEG_OPTS="${SEG_OPTS} -r"
+			shift ;;
 		-s)
 			SEG_OPTS="${SEG_OPTS} -s"
 			shift ;;

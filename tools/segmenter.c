@@ -39,6 +39,8 @@
 #define TS_SIZE 188
 #define WBUF_SIZE TS_SIZE * AES_BLOCK_SIZE
 
+static int random_iv = 0;
+
 typedef struct segment {
         unsigned int index, nameindex, discont;
         unsigned char iv[AES_BLOCK_SIZE];
@@ -109,8 +111,6 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
         FILE *fp;
         segment *tmp;
 
-        ivstr[AES_BLOCK_SIZE * 2 + 1] = '\0';
-
         if (!(tmpfile = malloc(sizeof (char) * (strlen(plist) + 6)))) {
                 fprintf(stderr, "malloc error.\n");
                 return 0;
@@ -151,8 +151,12 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
                 basen = basename(basec);
         }
 
+        if (keyfile && !random_iv)
+                fprintf(fp, "#EXT-X-KEY:METHOD=AES-128,"
+                                "URI=\"%s\"\n", key_url ? key_url : keyfile);
+
         while (tmp) {
-                if (keyfile) {
+                if (keyfile && random_iv) {
                         for (i = 0; i < AES_BLOCK_SIZE; i++)
                                 sprintf(&ivstr[i * 2], "%02x", tmp->iv[i]);
 
@@ -217,7 +221,7 @@ int main(int argc, char *argv[])
                       iv_init[AES_BLOCK_SIZE], ebuf[WBUF_SIZE];
         AES_KEY aes_key;
 
-        while ((opt = getopt(argc, argv, "ac:efhi:k:K:n:p:st:U:v")) != -1) {
+        while ((opt = getopt(argc, argv, "ac:efhi:k:K:n:p:rst:U:v")) != -1) {
                 switch (opt) {
                         case 'a':
                                 audio_pts = 0;
@@ -246,6 +250,7 @@ int main(int argc, char *argv[])
                                 printf(" -K <url>       url for aes key in the playlist\n");
                                 printf(" -n <count>     keep <count> segments in the playlist (0 keeps all)\n");
                                 printf(" -p <filename>  write playlist file\n");
+                                printf(" -r             randomize every IV\n");
                                 printf(" -s             use the system time instead of PTS\n");
                                 printf(" -t <sec>       target duration of a segment (default: 10)\n");
                                 printf(" -U <url>       url prefix for files in the playlist\n");
@@ -266,6 +271,9 @@ int main(int argc, char *argv[])
                                 break;
                         case 'p':
                                 plist = optarg;
+                                break;
+                        case 'r':
+                                random_iv = 1;
                                 break;
                         case 's':
                                 systime = 1;
@@ -311,12 +319,17 @@ int main(int argc, char *argv[])
 
                 AES_set_encrypt_key(key, 128, &aes_key);
 
-                if (RAND_bytes(iv_init, AES_BLOCK_SIZE) <= 0) {
-                        fprintf(stderr, "%s\n",
-                                        ERR_error_string(ERR_get_error(),
-                                                NULL));
-                        return EXIT_FAILURE;
+                if (random_iv) {
+                        if (RAND_bytes(iv_init, AES_BLOCK_SIZE) <= 0) {
+                                fprintf(stderr, "%s\n",
+                                                ERR_error_string(
+                                                        ERR_get_error(),
+                                                        NULL));
+                                return EXIT_FAILURE;
+                        }
                 }
+                else
+                        memset(iv_init, 0, AES_BLOCK_SIZE);
 
                 memcpy(iv, iv_init, AES_BLOCK_SIZE);
         }
@@ -468,7 +481,6 @@ int main(int argc, char *argv[])
                                 break;
                         }
 
-
                         if (keyfile) {
                                 i = AES_BLOCK_SIZE - (wbuf_n % AES_BLOCK_SIZE);
 
@@ -532,13 +544,18 @@ int main(int argc, char *argv[])
                         nameindex = epoch ? time(NULL) : index;
 
                         if (keyfile) {
-                                if (RAND_bytes(iv_init, AES_BLOCK_SIZE) <= 0) {
-                                        fprintf(stderr, "%s\n",
-                                                        ERR_error_string(
-                                                                ERR_get_error(),
-                                                                NULL));
-                                        return EXIT_FAILURE;
+                                if (random_iv) {
+                                        if (RAND_bytes(iv_init, AES_BLOCK_SIZE)
+                                                        <= 0) {
+                                                fprintf(stderr, "%s\n",
+                                                                ERR_error_string(
+                                                                        ERR_get_error(),
+                                                                        NULL));
+                                                return EXIT_FAILURE;
+                                        }
                                 }
+                                else
+                                        iv_init[AES_BLOCK_SIZE - 1]++;
 
                                 memcpy(iv, iv_init, AES_BLOCK_SIZE);
                         }
