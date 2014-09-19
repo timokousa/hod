@@ -117,7 +117,13 @@ $y = (imagesy($img) - $h) / 2;
 imagecopyresampled($img, $play, $x, $y, 0, 0,
                 $w, $h, imagesx($play), imagesy($play));
 
-header('Content-Type: image/png');
+ob_start();
+
 imagepng($img);
+
+header('Content-Type: image/png');
+header('Content-Length: ' . ob_get_length());
+
+ob_end_flush();
 
 ?>
