@@ -24,18 +24,14 @@ $language = 'fin';
 $burn_subs = true;
 $df_threshold = 2147483648;
 $thumbnail_position = '00:05:00';
+$cookiehack = true;
+
+ini_set('session.cookie_secure', 0);
+ini_set('session.use_only_cookies', 0);
 
 date_default_timezone_set('Europe/Helsinki');
 
-if ($force_https && !isset($_SERVER['HTTPS'])) {
-        header('Location: https://' .
-                        $_SERVER['HTTP_HOST'] .
-                        $_SERVER['REQUEST_URI']);
-
-        exit;
-}
-
-include_once 'auth.php';
+session_name('hod');
 
 $cache = array();
 

@@ -18,7 +18,8 @@
    along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include_once 'rc.php';
+if (!isset($cache))
+        exit;
 
 #$cache['sources']['example']['title'] = 'example';
 #$cache['sources']['example']['description'] = 'example live source';

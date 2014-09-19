@@ -20,6 +20,9 @@
 
 include_once 'rc.php';
 
+session_start();
+include_once 'auth.php';
+
 if (isset($_POST['switch'])) {
         if (isset($_SESSION['player']) && $_SESSION['player'] == 'vlc')
                 $_SESSION['player'] = 'html5';

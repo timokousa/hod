@@ -20,6 +20,17 @@
 
 include_once 'rc.php';
 
+if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')) {
+        session_start();
+
+        if (!isset($_COOKIE[session_name()]))
+                setcookie(session_name(), session_id(), 0, '/', '',
+                                ini_get('session.cookie_secure'));
+}
+
+if (!isset($_SESSION['HTTPS']) && isset($_SERVER['HTTPS']))
+        $_SESSION['HTTPS'] = true;
+
 $file = isset($_GET['file']) ? $_GET['file'] : false;
 $key = isset($_GET['key']) ? $_GET['key'] : false;
 $src = isset($_GET['src']) ? $_GET['src'] : false;
@@ -37,6 +48,8 @@ if ($src && isset($cache['sources'][$src])) {
         touch($tsfile);
 
         if (!file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
+                include_once 'auth.php';
+
                 if (!is_dir('data'))
                         if (!mkdir('data'))
                                 exit("Could not create data dir.");
@@ -45,12 +58,15 @@ if ($src && isset($cache['sources'][$src])) {
                         ' -p ' . escapeshellarg('data' .
                                         DIRECTORY_SEPARATOR . $src .
                                         DIRECTORY_SEPARATOR . $src) .
-                        ' -u ' . escapeshellarg('PROTOCOL://HOST/' .
+                        ' -u ' . escapeshellarg(($cookiehack ?
+                                                'PROTOCOL' : 'http') .
+                                        '://HOST/' .
                                         basename($_SERVER['SCRIPT_NAME']) .
-                                        '?SESSION' .
-                                        '&src=' . urlencode($src) .
+                                        '?' . ($cookiehack ? 'SESSION&' : '') .
+                                        'src=' . urlencode($src) .
                                         '&file=') .
-                        ' -U ' . escapeshellarg('http://HOST/data/' .
+                        ' -U ' . escapeshellarg(($cookiehack ?
+                                                'http://HOST/' : '') . 'data/' .
                                         urlencode($src) . '/') .
                         ' -w ' . escapeshellarg($workdir);
 
@@ -75,8 +91,8 @@ if ($src && isset($cache['sources'][$src])) {
                                         DIRECTORY_SEPARATOR . $src . '.key') .
                                 ' -K ' . escapeshellarg('PROTOCOL://HOST/' .
                                                 basename($_SERVER['SCRIPT_NAME']) .
-                                                '?SESSION' .
-                                                '&key=' . urlencode($src));
+                                                '?' . ($cookiehack ? 'SESSION&' : '') .
+                                                'key=' . urlencode($src));
                 }
 
                 exec('hod' . $opts .
@@ -150,7 +166,7 @@ if ($file && $src) {
         if (preg_match('/\.m3u8$/i', $file) && file_exists($plfile)) {
                 ob_start();
 
-                $protocol = (isset($_SERVER['HTTPS']) || $force_https) ?
+                $protocol = (isset($_SESSION['HTTPS']) || $force_https) ?
                         'https://' : 'http://';
 
                 $host = '://' . $_SERVER['HTTP_HOST'] .
@@ -170,8 +186,13 @@ if ($file && $src) {
                                      ),
                                 file_get_contents($plfile));
 
-                header('Cache-Control: no-cache, must-revalidate');
-                header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+                if (!session_id() &&
+                                strpos(ob_get_contents(),
+                                        "#EXT-X-ENDLIST") === false) {
+                        header('Cache-Control: no-cache, must-revalidate');
+                        header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+                }
+
                 header('Content-Type: application/x-mpegURL');
                 header('Content-Length: ' . ob_get_length());
 
@@ -182,6 +203,8 @@ if ($file && $src) {
 }
 
 if ($key) {
+        include_once 'auth.php';
+
         $keyfile = $workdir . DIRECTORY_SEPARATOR . $key . '.key';
 
         if (file_exists($keyfile)) {
@@ -189,8 +212,10 @@ if ($key) {
 
                 readfile($keyfile);
 
-                header('Cache-Control: no-cache, must-revalidate');
-                header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+                if (!session_id()) {
+                        header('Cache-Control: no-cache, must-revalidate');
+                        header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+                }
                 header('Content-Type: application/octet-stream');
                 header('Content-Length: ' . ob_get_length());
 

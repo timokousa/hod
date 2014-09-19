@@ -23,10 +23,6 @@ $passwd = array(
                 array('user2', 'password2'),
                );
 
-ini_set('session.use_only_cookies', 0);
-session_name('hod');
-session_start();
-
 if (isset($_REQUEST['logout'])) {
         $_SESSION = array();
 
@@ -38,6 +34,14 @@ if (isset($_REQUEST['logout'])) {
         header('Location: ' . (isset($_SERVER['HTTPS']) ?
                                 'https://' : 'http://') .
                         $_SERVER['HTTP_HOST'] .  $_SERVER['SCRIPT_NAME']);
+
+        exit;
+}
+
+if ($force_https && !isset($_SERVER['HTTPS'])) {
+        header('Location: https://' .
+                        $_SERVER['HTTP_HOST'] .
+                        $_SERVER['REQUEST_URI']);
 
         exit;
 }

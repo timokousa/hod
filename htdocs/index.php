@@ -20,6 +20,9 @@
 
 include_once 'rc.php';
 
+session_start();
+include_once 'auth.php';
+
 if (isset($_POST['refresh'])) {
         unset($cache['sources']);
 

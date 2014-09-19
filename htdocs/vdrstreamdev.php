@@ -18,7 +18,8 @@
    along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-include_once 'rc.php';
+if (!isset($cache))
+        exit;
 
 $vdrhost = 'localhost';
 $logodir = '/usr/share/vdr/channel-logos';
