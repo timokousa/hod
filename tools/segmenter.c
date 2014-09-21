@@ -554,8 +554,16 @@ int main(int argc, char *argv[])
                                                 return EXIT_FAILURE;
                                         }
                                 }
-                                else
-                                        iv_init[AES_BLOCK_SIZE - 1]++;
+                                else {
+                                        iv_init[AES_BLOCK_SIZE - 1] =
+                                                index & 0xff;
+                                        iv_init[AES_BLOCK_SIZE - 2] =
+                                                (index >> 8) & 0xff;
+                                        iv_init[AES_BLOCK_SIZE - 3] =
+                                                (index >> 16) & 0xff;
+                                        iv_init[AES_BLOCK_SIZE - 4] =
+                                                (index >> 24) & 0xff;
+                                }
 
                                 memcpy(iv, iv_init, AES_BLOCK_SIZE);
                         }
