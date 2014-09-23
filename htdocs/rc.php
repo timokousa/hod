@@ -25,6 +25,7 @@ $burn_subs = true;
 $df_threshold = 2147483648;
 $thumbnail_position = '00:05:00';
 $cookiehack = true;
+#$ffopts = '-txt_page 694,699';
 
 ini_set('session.cookie_secure', 0);
 ini_set('session.use_only_cookies', 0);

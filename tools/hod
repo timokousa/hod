@@ -17,7 +17,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 
-TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:p:rsSt:u:U:w: -- "${@}")
+TEMP=$(getopt -n ${0} -o c:efhk:K:l:n:N:o:p:rsSt:u:U:w: -- "${@}")
 if [ ${?} != 0 ]; then
 	echo "Usage: ${0} [options] input"
 	exit 1
@@ -51,10 +51,11 @@ while true; do
 			echo " -l <lang>     preferred language for audio / subtitles"
 			echo " -n <count>    keep <count> segments (0 keeps all)"
 			echo " -N <int>      value to pass for nice -n"
+			echo " -o <opts>     options for ffmpeg"
 			echo " -p <prefix>   prefix for all files to be created"
 			echo " -r            randomize every IV"
 			echo " -s            use the system time instead of PTS"
-			echo " -S            burn dvbsubtitles"
+			echo " -S            burn subtitles"
 			echo " -t <sec>      target duration of a segment (default: 10)"
 			echo " -u <url>      url prefix for playlists in the abr playlist"
 			echo " -U <url>      url prefix for ts-files in the playlist"
@@ -75,6 +76,9 @@ while true; do
 			shift 2 ;;
 		-N)
 			NICE="nice -n ${2}"
+			shift 2 ;;
+		-o)
+			PASSED_OPTS="${2}"
 			shift 2 ;;
 		-p)
 			PREFIX=$(basename ${2})
@@ -151,6 +155,8 @@ while read line; do
 		unset index;
 		unset codec_type;
 		unset codec_name;
+		unset width;
+		unset height;
 		unset language;
 		continue;
 	fi
@@ -158,19 +164,25 @@ while read line; do
 	[[ "${line}" == "index="* ]] && index="${line##index=}"
 	[[ "${line}" == "codec_type="* ]] && codec_type="${line##codec_type=}"
 	[[ "${line}" == "codec_name="* ]] && codec_name="${line##codec_name=}"
+	[[ "${line}" == "width="* ]] && width="${line##width=}"
+	[[ "${line}" == "height="* ]] && height="${line##height=}"
 	[[ "${line}" == "TAG:language="* ]] && language="${line##TAG:language=}"
 
 	if [[ "${line}" == "[/STREAM]" ]]; then
-		[[ "${codec_type}" == "video" ]] && test -z "${video_index}" && video_index="${index}"
+		if [[ "${codec_type}" == "video" ]] && test -z "${video_index}"; then
+			video_index="${index}"
+			video_w="${width}"
+			video_h="${height}"
+		fi
 
 		if [[ "${codec_type}" == "audio" ]]; then
 			test -z "${audio_index}" && audio_index="${index}"
 			test -n "${LANG}" && [[ "${language}" == "${LANG}" ]] && audio_index="${index}"
 		fi
 
-		if test -n "${SUBTITLES}" && [[ "${codec_name}" == "dvbsub" ]]; then
+		if test -n "${SUBTITLES}" && [[ "${codec_name}" == "dvbsub" || "${codec_name}" == "libzvbi_teletextdec" ]]; then
 			if [ -n "${LANG}" ]; then
-				[[ "${language}" == "${LANG}" ]] && sub_index="${index}"
+				[[ "${language}" == *"${LANG}"* ]] && sub_index="${index}"
 			else
 				test -z "${sub_index}" && sub_index="${index}"
 			fi
@@ -181,9 +193,9 @@ done < "${WORKDIR}/${PREFIX}.streams"
 if [ -n "${video_index}" ]; then
 	if [ -n "${sub_index}" ]; then
 		if [ -n "${FILTER}" ]; then
-			MAP_VIDEO="-filter_complex [0:${video_index}]${FILTER}[video];[video][0:${sub_index}]overlay[out] -map [out]"
+			MAP_VIDEO="-filter_complex [0:${video_index}]${FILTER}[video];[0:${sub_index}]scale=${video_w}:${video_h}[sub];[video][sub]overlay[out] -map [out]"
 		else
-			MAP_VIDEO="-filter_complex [0:${video_index}][0:${sub_index}]overlay[out] -map [out]"
+			MAP_VIDEO="-filter_complex [0:${sub_index}]scale=${video_w}:${video_h}[sub];[0:${video_index}][sub]overlay[out] -map [out]"
 		fi
 	else
 		if [ -n "${FILTER}" ]; then
@@ -259,7 +271,7 @@ fi
 
 mv -f "${DATADIR}/${PREFIX}.m3u8.part" "${DATADIR}/${PREFIX}.m3u8"
 
-${NICE} ffmpeg ${FFMPEG_OPTS} || touch ${FIFOS}
+${NICE} ffmpeg ${PASSED_OPTS} ${FFMPEG_OPTS} || touch ${FIFOS}
 
 sleep 1
 

@@ -70,6 +70,9 @@ if ($src && isset($cache['sources'][$src])) {
                                         urlencode($src) . '/') .
                         ' -w ' . escapeshellarg($workdir);
 
+                if (isset($ffopts))
+                        $opts .= ' -o ' . escapeshellarg($ffopts);
+
                 if ($language)
                         $opts .= ' -l ' . escapeshellarg($language);
 
