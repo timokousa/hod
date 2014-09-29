@@ -175,7 +175,11 @@ if ($file && $src) {
                 $host = '://' . $_SERVER['HTTP_HOST'] .
                         dirname($_SERVER['SCRIPT_NAME']) . '/';
 
-                $session = '?' . session_name() . '=' . session_id() . '&';
+                $session = '?';
+                if (session_id() && !ini_get('session.use_only_cookies') &&
+                                (isset($_SERVER['HTTPS']) ||
+                                 !ini_get('session.cookie_secure')))
+                        $session .= session_name() . '=' . session_id() . '&';
 
                 echo str_replace(array(
                                         'PROTOCOL://',

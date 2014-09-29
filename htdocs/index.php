@@ -47,7 +47,11 @@ if (isset($_GET['q'])) {
 
 $urlbase = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
         $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
-$session = session_name() . '=' . session_id();
+
+$session = '';
+if (session_id() && !ini_get('session.use_only_cookies') &&
+                (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
+        $session = session_name() . '=' . session_id() . '&';
 
 ?>
 <html>
@@ -103,7 +107,7 @@ foreach (array_keys($cache['sources']) as $key) {
       </span>
      </a>
      <span style="font-family: Arial; font-size: 1em;">
-      <a href="<?=$urlbase?>/hod.php?<?=$session?>&src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
+      <a href="<?=$urlbase?>/hod.php?<?=$session?>src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
        (direct&nbsp;link)
       </a>
      </span>
