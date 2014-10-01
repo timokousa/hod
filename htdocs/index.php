@@ -20,8 +20,8 @@
 
 include_once 'rc.php';
 
-session_start();
-include_once 'auth.php';
+if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure'))
+        session_start();
 
 if (isset($_POST['refresh'])) {
         unset($cache['sources']);
@@ -43,6 +43,13 @@ if (isset($_GET['q'])) {
                                         $src['title'] .
                                         ' ' . $src['description']))
                         unset($cache['sources'][$key]);
+}
+
+foreach ($cache['sources'] as $src) {
+        if (isset($src['encrypt']) && $src['encrypt']) {
+                include_once 'auth.php';
+                break;
+        }
 }
 
 $urlbase = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
@@ -93,7 +100,7 @@ if (!is_writable('data'))
         echo '<font color="red">Error: data dir is not writable</font><br><br>';
 ?>
 <?php
-foreach (array_keys($cache['sources']) as $key) {
+foreach ($cache['sources'] as $key => $src) {
 ?>
    <tr>
     <td style="padding: 0px; border-bottom: 1px solid black;">
@@ -107,7 +114,7 @@ foreach (array_keys($cache['sources']) as $key) {
       </span>
      </a>
      <span style="font-family: Arial; font-size: 1em;">
-      <a href="<?=$urlbase?>/hod.php?<?=$session?>src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
+      <a href="<?=$urlbase?>/hod.php?<?=(isset($src['encrypt']) && $src['encrypt']) ? $session : ''?>src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
        (direct&nbsp;link)
       </a>
      </span>

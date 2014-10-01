@@ -20,8 +20,18 @@
 
 include_once 'rc.php';
 
-session_start();
-include_once 'auth.php';
+$src = isset($_GET['src']) ? $_GET['src'] : null;
+
+if ($src && !isset($cache['sources']))
+        include_once 'sources.php';
+
+if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure'))
+        session_start();
+
+if (isset($cache['sources'][$src]) &&
+                        isset($cache['sources'][$src]['encrypt']) &&
+                        $cache['sources'][$src]['encrypt'])
+        include_once 'auth.php';
 
 if (isset($_POST['switch'])) {
         if (isset($_SESSION['player']) && $_SESSION['player'] == 'vlc')
@@ -37,15 +47,13 @@ if (isset($_POST['switch'])) {
         exit;
 }
 
-$src = isset($_GET['src']) ? $_GET['src'] : null;
-
-if ($src && !isset($cache['sources']))
-        include_once 'sources.php';
-
 $videosrc = '';
 
 $session = '';
-if (session_id() && !ini_get('session.use_only_cookies') &&
+if (isset($cache['sources'][$src]) &&
+                isset($cache['sources'][$src]['encrypt']) &&
+                $cache['sources'][$src]['encrypt'] && session_id() &&
+                !ini_get('session.use_only_cookies') &&
                 (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
         $session = session_name() . '=' . session_id() . '&';
 

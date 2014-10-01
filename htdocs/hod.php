@@ -23,36 +23,39 @@ include_once 'rc.php';
 if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')) {
         session_start();
 
+        if (!isset($_SESSION['HTTPS']) && isset($_SERVER['HTTPS']))
+                $_SESSION['HTTPS'] = true;
+
         if (!isset($_COOKIE[session_name()]))
                 setcookie(session_name(), session_id(), 0, '/', '',
                                 ini_get('session.cookie_secure'));
 }
 
-if (!isset($_SESSION['HTTPS']) && isset($_SERVER['HTTPS']))
-        $_SESSION['HTTPS'] = true;
-
 $file = isset($_GET['file']) ? $_GET['file'] : false;
 $key = isset($_GET['key']) ? $_GET['key'] : false;
 $src = isset($_GET['src']) ? $_GET['src'] : false;
 
-if ($src && !isset($cache['sources']))
-        include_once 'sources.php';
+if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
+        if (!isset($cache['sources']))
+                include_once 'sources.php';
 
-if ($src && isset($cache['sources'][$src])) {
-        if (!is_dir($workdir))
-                if (!mkdir($workdir))
-                        exit("Could not create workdir.");
+        if (isset($cache['sources'][$src])) {
+                if (isset($cache['sources'][$src]['encrypt']) &&
+                                $cache['sources'][$src]['encrypt'])
+                        include_once 'auth.php';
+                else
+                        $cookiehack = false;
 
-        $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
-
-        touch($tsfile);
-
-        if (!file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
-                include_once 'auth.php';
+                if (!is_dir($workdir))
+                        if (!mkdir($workdir))
+                                exit("Could not create workdir.");
 
                 if (!is_dir('data'))
                         if (!mkdir('data'))
                                 exit("Could not create data dir.");
+
+                $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
+                touch($tsfile);
 
                 $opts = ' -f' .
                         ' -p ' . escapeshellarg('data' .
@@ -169,7 +172,9 @@ if ($file && $src) {
         if (preg_match('/\.m3u8$/i', $file) && file_exists($plfile)) {
                 ob_start();
 
-                $protocol = (isset($_SESSION['HTTPS']) || $force_https) ?
+                $protocol = (isset($_SERVER['HTTPS']) ||
+                                        isset($_SESSION['HTTPS']) ||
+                                        $force_https) ?
                         'https://' : 'http://';
 
                 $host = '://' . $_SERVER['HTTP_HOST'] .
@@ -204,6 +209,8 @@ if ($file && $src) {
                 header('Content-Length: ' . ob_get_length());
 
                 ob_end_flush();
+
+                touch($tsfile);
 
                 exit;
         }
