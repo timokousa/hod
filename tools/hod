@@ -180,7 +180,7 @@ while read line; do
 			test -n "${LANG}" && [[ "${language}" == "${LANG}" ]] && audio_index="${index}"
 		fi
 
-		if test -n "${SUBTITLES}" && [[ "${codec_name}" == "dvbsub" || "${codec_name}" == "libzvbi_teletextdec" ]]; then
+		if test -n "${SUBTITLES}" && [[ "${codec_name}" == "dvbsub" || ( -z "${sub_index}" && "${codec_name}" == "libzvbi_teletextdec" ) ]]; then
 			if [ -n "${LANG}" ]; then
 				[[ "${language}" == *"${LANG}"* ]] && sub_index="${index}"
 			else
