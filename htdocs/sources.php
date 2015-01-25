@@ -35,8 +35,25 @@ if (!isset($cache))
 
 #$cache['expires'] = time() + 600;
 
+function find($dir, $q, $recursive = true) {
+        $ret = array();
+
+        $files = glob(rtrim($dir, DIRECTORY_SEPARATOR) .
+                        DIRECTORY_SEPARATOR . '*');
+
+        foreach ($files as $file) {
+                if ($recursive && is_dir($file))
+                        $ret = array_merge($ret, find($file, $q, true));
+                elseif (preg_match($q, basename($file)))
+                        $ret[] = $file;
+        }
+
+        return $ret;
+}
+
 include_once 'vdrstreamdev.php';
 include_once 'vdrvideodir.php';
+include_once 'videodir.php';
 
 file_put_contents($workdir . DIRECTORY_SEPARATOR . 'hod-cache',
                 serialize($cache));

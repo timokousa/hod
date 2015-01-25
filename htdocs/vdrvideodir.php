@@ -23,22 +23,6 @@ if (!isset($cache))
 
 $videodir = '/var/vdr/video';
 
-function find($dir, $q, $recursive = true) {
-        $ret = array();
-
-        $files = glob(rtrim($dir, DIRECTORY_SEPARATOR) .
-                        DIRECTORY_SEPARATOR . '*');
-
-        foreach ($files as $file) {
-                if ($recursive && is_dir($file))
-                        $ret = array_merge($ret, find($file, $q, true));
-                elseif (preg_match($q, basename($file)))
-                        $ret[] = $file;
-        }
-
-        return $ret;
-}
-
 $recordings = find($videodir, '/^info$/', true);
 
 foreach ($recordings as $recording) {
