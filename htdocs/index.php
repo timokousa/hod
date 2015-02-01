@@ -70,8 +70,9 @@ if (session_id() && !ini_get('session.use_only_cookies') &&
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="play.png" />
+  <script type="text/javascript" src="javascript.js"></script>
  </head>
- <body style="margin: 0; padding: 0">
+ <body onload="thumbs_up()" style="margin: 0; padding: 0">
   <div style="font-family: Arial; font-size: 1em; float: right;">
    <a align="right" href="?logout">Logout</a>
   </div>
@@ -128,47 +129,5 @@ foreach ($cache['sources'] as $key => $src) {
 }
 ?>
   </table>
- <script type="text/javascript">
-function thumbs_up() {
-        document.removeEventListener('scroll', thumbs_up);
-
-        var imgs = document.getElementsByTagName("img");
-        var thumb_down = false;
-
-        for (var i = 0; i < imgs.length; i++) {
-                var img = imgs[i];
-
-                if (img.className != "thumbnail" || !img.alt)
-                        continue;
-
-                var height = window.innerHeight;
-                var rects = img.getClientRects();
-                var visible = false;
-
-                for (var j = 0; j < rects.length; j++)
-                        if ((rects[j].top >= 0 && rects[j].top <= height) ||
-                                        (rects[j].bottom >= 0 &&
-                                         rects[j].bottom <= height))
-                                visible = true;
-
-                if (!visible) {
-                        thumb_down = true;
-                        continue;
-                }
-
-                var alt = img.alt;
-                img.alt = "";
-                img.onload = thumbs_up;
-                img.src = alt;
-
-                break;
-        }
-
-        if (thumb_down && i >= imgs.length)
-                document.addEventListener('scroll', thumbs_up);
-}
-
-window.onload = thumbs_up;
- </script>
  </body>
 </html>

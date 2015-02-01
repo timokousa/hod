@@ -109,8 +109,12 @@ $description = isset($cache['sources'][$src]) ?
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
+<?php if ($_SESSION['player'] == 'html5') { ?>
+  <script type="text/javascript" src="javascript.js"></script>
+<?php } ?>
  </head>
- <body style="margin: 0; padding: 0">
+ <body<?php if ($_SESSION['player'] == 'html5')
+        echo ' onload="load_poster(' . "'" . urlencode($src) . "'" . ')"' ?> style="margin: 0; padding: 0">
   <div style="width: 640px;">
    <?=$player?>
    <form method="post">
@@ -127,16 +131,5 @@ $description = isset($cache['sources'][$src]) ?
     <div style="float: right"><a href=".">back</a></div>
    </div>
   </div>
-<?php if ($_SESSION['player'] == 'html5') { ?>
-  <script type="text/javascript">
-var video = document.getElementById('video');
-video.poster = "img.php?src=<?=urlencode($src)?>";
-
-function play_video() {
-        video.play();
-        video.webkitEnterFullScreen();
-}
-  </script>
-<?php } ?>
  </body>
 </html>
