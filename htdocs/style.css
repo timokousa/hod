@@ -21,10 +21,56 @@ a {
  color: #00f;
  text-decoration: none;
 }
+
 a:visited {
  color: #00f;
  text-decoration: none;
 }
+
+body {
+ margin: 0;
+ padding: 0;
+}
+
+div {
+ font-family: Arial;
+ margin: 0;
+ padding: 0;
+}
+
+div.header {
+ text-align: center;
+}
+
+div.player {
+ width: 640px;
+}
+
+div.thumb {
+ width: 128px;
+ height: 72px;
+ text-align: center;
+}
+
+div#logout {
+ text-align: right;
+}
+
+hr {
+ clear: both;
+ margin: 0;
+ padding: 0;
+ border: none;
+ height: 1px;
+ color: black;
+ background-color: black;
+}
+
+span {
+ font-family: Arial;
+ font-size: 1em;
+}
+
 .box {
  -webkit-border-radius: 15px;
  -moz-border-radius: 15px;
@@ -34,7 +80,15 @@ a:visited {
  font-family: Arial; 
  font-size: 1.2em;
 }
+
+.left {
+ float: left;
+}
+
+.right {
+ float: right;
+}
+
 .tiny {
- font-family: Arial; 
  font-size: 0.8em;
 }

@@ -72,27 +72,22 @@ if (session_id() && !ini_get('session.use_only_cookies') &&
   <link rel="apple-touch-icon" href="play.png" />
   <script type="text/javascript" src="javascript.js"></script>
  </head>
- <body onload="thumbs_up()" style="margin: 0; padding: 0">
-  <div style="font-family: Arial; font-size: 1em; float: right;">
-   <a align="right" href="?logout">Logout</a>
+ <body onload="thumbs_up()">
+  <div class="tiny" id="logout">
+   <a href="?logout">Logout</a>
   </div>
   <!--
   <form method="post">
    <input type="submit" name="refresh" value="refresh">
   </form>
   -->
-  <table width="100%" style="border-collapse: collapse;">
-   <tr>
-    <td style="padding: 0px; border-bottom: 1px solid black;">
-     <div style="text-align: center; font-family: Arial;">
-      <h1>HLS On Demand</h1>
-      <form method="get">
-       <input name="q" value="<?=isset($_GET['q']) ? htmlentities($_GET['q']) : ''?>">
-       <input type="submit" value="Search">
-      </form>
-     </div>
-    </td>
-   </tr>
+  <div class="header">
+   <h1>HLS On Demand</h1>
+   <form method="get">
+    <input name="q" value="<?=isset($_GET['q']) ? htmlentities($_GET['q']) : ''?>">
+    <input type="submit" value="Search">
+   </form>
+  </div>
 <?php
 if (!is_writable($workdir))
         echo '<font color="red">Error: ' . $workdir . ' is not writable</font><br><br>';
@@ -103,31 +98,26 @@ if (!is_writable('data'))
 <?php
 foreach ($cache['sources'] as $key => $src) {
 ?>
-   <tr>
-    <td style="padding: 0px; border-bottom: 1px solid black;">
-     <a href="player.php?src=<?=urlencode($key)?>">
-      <div style="width: 128px; height: 72px; float: left; text-align: center;">
-       <img src="img.php?w=128&h=72" class="thumbnail"
-       alt="img.php?w=128&h=72&src=<?=urlencode($key)?>">
-      </div>
-      <span style="font-family: Arial; font-size: 1em;">
-       <?=$cache['sources'][$key]['title']?>
-      </span>
-     </a>
-     <span style="font-family: Arial; font-size: 1em;">
-      <a href="<?=$urlbase?>/hod.php?<?=(isset($src['encrypt']) && $src['encrypt']) ? $session : ''?>src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
-       (direct&nbsp;link)
-      </a>
-     </span>
-     <br />
-     <div class="tiny">
-      <?=$cache['sources'][$key]['description']?>
-     </div>
-    </td>
-   </tr>
+  <hr>
+  <a href="player.php?src=<?=urlencode($key)?>">
+   <div class="thumb left">
+    <img src="img.php?w=128&h=72" class="thumbnail" alt="img.php?w=128&h=72&src=<?=urlencode($key)?>">
+   </div>
+   <span>
+    <?=$cache['sources'][$key]['title']?>
+   </span>
+  </a>
+  <span>
+   <a href="<?=$urlbase?>/hod.php?<?=(isset($src['encrypt']) && $src['encrypt']) ? $session : ''?>src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
+    (direct&nbsp;link)
+   </a>
+  </span>
+  <br>
+  <div class="tiny">
+   <?=$cache['sources'][$key]['description']?>
+  </div>
 <?php
 }
 ?>
-  </table>
  </body>
 </html>

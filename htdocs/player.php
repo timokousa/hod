@@ -114,21 +114,21 @@ $description = isset($cache['sources'][$src]) ?
 <?php } ?>
  </head>
  <body<?php if ($_SESSION['player'] == 'html5')
-        echo ' onload="load_poster(' . "'" . urlencode($src) . "'" . ')"' ?> style="margin: 0; padding: 0">
-  <div style="width: 640px;">
+        echo ' onload="load_poster(' . "'" . urlencode($src) . "'" . ')"' ?>>
+  <div class="player">
    <?=$player?>
    <form method="post">
-    <div style="float: right">
+    <div class="right">
      <input type="submit" name="switch" value="switch player" />
     </div>
    </form>
-   <div style="font-family: Arial;">
+   <div>
     <h2><?=$title?></h2>
     <?=$description?>
-    <br />
-    <br />
+    <br>
+    <br>
     <a href="<?=$videosrc?>">direct link</a>
-    <div style="float: right"><a href=".">back</a></div>
+    <div class="right"><a href=".">back</a></div>
    </div>
   </div>
  </body>
