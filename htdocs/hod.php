@@ -86,7 +86,7 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
                                 $cache['sources'][$src]['live']) {
                         $opts .= ' -c ' . escapeshellarg($tsfile) .
                                 ' -e' .
-                                ' -n 3';
+                                ' -n 6';
                 }
                 else
                         $opts .= ' -N 10';
