@@ -459,8 +459,8 @@ int main(int argc, char *argv[])
                                 ((systime && cur_seg / PTS_HZ >= seg_len * 0.9 &&
                                   time(NULL) % seg_len == 0) ||
                                  (!systime && (afl && ts[5] & 0x40) &&
-                                  (cur_seg / PTS_HZ >= seg_len)) ||
-                                 (cur_seg / PTS_HZ >= seg_len * 1.1))) {
+                                  (cur_seg / PTS_HZ >= seg_len * 0.9)) ||
+                                 (cur_seg / PTS_HZ >= seg_len * 1.3))) {
                         limbo = 1;
                         cur_seg = 0;
                 }
