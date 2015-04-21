@@ -204,13 +204,13 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
 
 int main(int argc, char *argv[])
 {
-        uint8_t ts[TS_SIZE], *buf;
-        uint16_t pid, tpid = 0;
+        uint8_t ts[TS_SIZE], patpmt[TS_SIZE * 2], *buf;
+        uint16_t pid, pmtpid = 0, tpid = 0;
         uint64_t pts = 0, last_pts = 0;
         long long pts_delta, cur_seg = 0, last_seg = 0;
         int fd, afe, afl, pl_st, count = 0, opt, force = 0, epoch = 0,
             seg_len = 10, verbose = 0, audio_pts = 1, systime = 0, i,
-            pes_remaining[MAX_PIDS] = { 0 }, limbo = 0, buf_size = TS_SIZE,
+            pes_remaining[MAX_PIDS] = { 0 }, limbo = 0, buf_size = TS_SIZE * 2,
             buf_n = 0, wbuf_n = 0, pesses = 0;
         unsigned int index = 0, nameindex, disco = 0, bits = 0, bandwidth = 0;
         char *fname, *fmt, *plist = NULL, *tmpfile, *keepalive = NULL,
@@ -386,16 +386,44 @@ int main(int argc, char *argv[])
                 if (pid == 0x1fff)
                         continue;
 
-                if (!systime) {
-                        afl = 0;
-                        afe = (ts[3] & 0x30) >> 4;
+                afl = 0;
+                afe = (ts[3] & 0x30) >> 4;
 
-                        if (afe == 2)
-                                afl = 184;
-                        else if (afe == 3)
-                                afl = ts[4] + 1;
+                if (afe == 2)
+                        afl = 184;
+                else if (afe == 3)
+                        afl = ts[4] + 1;
 
-                        pl_st = 4 + afl;
+                pl_st = 4 + afl;
+
+                if (pid == 0) {
+                        if (!ts[pl_st + 6] & 0x01)
+                                continue;
+
+                        memcpy(patpmt, ts, TS_SIZE);
+                        pmtpid = ((ts[pl_st + 11] & 0x1f) << 8) | ts[pl_st + 12];
+
+                        if (buf_n)
+                                continue;
+                }
+
+                if (pmtpid && pid == pmtpid) {
+                        if (!ts[pl_st + 6] & 0x01)
+                                continue;
+
+                        memcpy(patpmt + TS_SIZE, ts, TS_SIZE);
+
+                        if (!buf_n) {
+                                patpmt[3] = (patpmt[3] & 0xf0) |
+                                        ((index + 1) & 0x0f);
+                                patpmt[TS_SIZE + 3] = (patpmt[TS_SIZE + 3] & 0xf0) |
+                                        ((index + 1) & 0x0f);
+
+                                memcpy(buf, patpmt, TS_SIZE * 2);
+                                buf_n = TS_SIZE * 2;
+                        }
+                        else
+                                continue;
                 }
 
                 if (!systime && !tpid) {
@@ -622,6 +650,16 @@ int main(int argc, char *argv[])
                         bits = buf_n * 8;
                         buf_n = 0;
                         limbo = 0;
+
+                        if (pmtpid) {
+                                patpmt[3] = (patpmt[3] & 0xf0) |
+                                        ((index + 1) & 0x0f);
+                                patpmt[TS_SIZE + 3] = (patpmt[TS_SIZE + 3] & 0xf0) |
+                                        ((index + 1) & 0x0f);
+
+                                memcpy(buf, patpmt, TS_SIZE * 2);
+                                buf_n = TS_SIZE * 2;
+                        }
                 }
 
                 if (ts[1] & 0x40 &&
