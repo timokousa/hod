@@ -171,6 +171,7 @@ if ($file && $src) {
 
         if (preg_match('/\.m3u8$/i', $file) && file_exists($plfile)) {
                 ob_start();
+                ob_start('ob_gzhandler');
 
                 $protocol = (isset($_SERVER['HTTPS']) ||
                                         isset($_SESSION['HTTPS']) ||
@@ -206,8 +207,9 @@ if ($file && $src) {
                 }
 
                 header('Content-Type: application/x-mpegURL');
-                header('Content-Length: ' . ob_get_length());
+                ob_end_flush();
 
+                header('Content-Length: ' . ob_get_length());
                 ob_end_flush();
 
                 touch($tsfile);
