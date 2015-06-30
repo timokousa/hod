@@ -43,7 +43,15 @@ if (file_exists($workdir . DIRECTORY_SEPARATOR . 'hod-cache'))
         $cache = unserialize(file_get_contents(
                                 $workdir . DIRECTORY_SEPARATOR . 'hod-cache'));
 
-if (isset($cache['expires']) && $cache['expires'] < time())
-        unset($cache['sources'], $cache['expires']);
+function cache_refresh() {
+        global $cache, $workdir;
+
+        if (isset($cache['expires']) && $cache['expires'] < time()) {
+                unset($cache['expires']);
+                if (file_put_contents($workdir . DIRECTORY_SEPARATOR . 'hod-cache',
+                                        serialize($cache)) !== false)
+                        exec("php cacheup.php -f 2> /dev/null > /dev/null &");
+        }
+}
 
 ?>

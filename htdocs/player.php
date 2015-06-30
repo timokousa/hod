@@ -20,6 +20,8 @@
 
 include_once 'rc.php';
 
+cache_refresh();
+
 $src = isset($_GET['src']) ? $_GET['src'] : null;
 
 if ($src && !isset($cache['sources']))

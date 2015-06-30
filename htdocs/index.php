@@ -20,11 +20,15 @@
 
 include_once 'rc.php';
 
+cache_refresh();
+
 if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure'))
         session_start();
 
 if (isset($_POST['refresh'])) {
-        unset($cache['sources']);
+        $cache['expires'] = 1;
+        file_put_contents($workdir . DIRECTORY_SEPARATOR . 'hod-cache',
+                        serialize($cache));
 
         header('Location: ' . (isset($_SERVER['HTTPS']) ?
                                 'https://' : 'http://') .
