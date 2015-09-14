@@ -27,7 +27,8 @@ if (isset($_REQUEST['logout'])) {
         $_SESSION = array();
 
         if (isset($_COOKIE[session_name()]))
-                setcookie(session_name(), '', time() - 42000, '/');
+                setcookie(session_name(), '', time() - 42000,
+                                ini_get('session.cookie_path'));
 
         session_destroy();
 
@@ -94,5 +95,12 @@ if (!isset($_SESSION['user'], $_SESSION['password']) ||
 <?php
         exit;
 }
+
+if (ini_get('session.cookie_lifetime') && session_name() && session_id())
+        setcookie(session_name(), session_id(),
+                        time() + ini_get('session.cookie_lifetime'),
+                        ini_get('session.cookie_path'),
+                        ini_get('session.cookie_domain'),
+                        ini_get('session.cookie_secure'));
 
 ?>

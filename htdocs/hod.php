@@ -27,7 +27,11 @@ if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')) {
                 $_SESSION['HTTPS'] = true;
 
         if (!isset($_COOKIE[session_name()]))
-                setcookie(session_name(), session_id(), 0, '/', '',
+                setcookie(session_name(), session_id(),
+                                ini_get('session.cookie_lifetime') ?
+                                time() + ini_get('session.cookie_lifetime') :
+                                0, ini_get('session.cookie_path'),
+                                ini_get('session.cookie_domain'),
                                 ini_get('session.cookie_secure'));
 }
 
