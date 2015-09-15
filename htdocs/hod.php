@@ -20,19 +20,17 @@
 
 include_once 'rc.php';
 
-if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')) {
+$session = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : null;
+
+if (!ini_get('session.use_only_cookies') && isset($_GET[session_name()]))
+        $session = $_GET[session_name()];
+
+if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure') && $session) {
+        session_id($session);
         session_start();
 
         if (!isset($_SESSION['HTTPS']) && isset($_SERVER['HTTPS']))
                 $_SESSION['HTTPS'] = true;
-
-        if (!isset($_COOKIE[session_name()]))
-                setcookie(session_name(), session_id(),
-                                ini_get('session.cookie_lifetime') ?
-                                time() + ini_get('session.cookie_lifetime') :
-                                0, ini_get('session.cookie_path'),
-                                ini_get('session.cookie_domain'),
-                                ini_get('session.cookie_secure'));
 }
 
 $file = isset($_GET['file']) ? $_GET['file'] : false;
