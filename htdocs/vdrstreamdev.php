@@ -48,7 +48,7 @@ foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
                         $cache['sources'][$key]['thumbnail'] = $logofile;
 
                 $logofile = $logodir . DIRECTORY_SEPARATOR .
-                        $key . $logoextension;
+                        $key . '.' . $logoextension;
 
                 if (file_exists($logofile))
                         $cache['sources'][$key]['thumbnail'] = $logofile;
