@@ -40,8 +40,15 @@ foreach (file('http://' . $vdrhost . ':3000/channels.m3u') as $line) {
                 $cache['sources'][$key]['input'] = rtrim($line);
 
                 $logofile = $logodir . DIRECTORY_SEPARATOR .
-                        preg_replace('/^[0-9]* /', '', $name) .
+                        preg_replace('/^[0-9]* /', '',
+                                        str_replace('/', '~', $name)) .
                         '.' . $logoextension;
+
+                if (file_exists($logofile))
+                        $cache['sources'][$key]['thumbnail'] = $logofile;
+
+                $logofile = $logodir . DIRECTORY_SEPARATOR .
+                        $key . $logoextension;
 
                 if (file_exists($logofile))
                         $cache['sources'][$key]['thumbnail'] = $logofile;
@@ -79,12 +86,11 @@ if ($key) {
                 $cache['sources'][$key]['description'] = '';
 
                 if (isset($now[$key]))
-                        $cache['sources'][$key]['description'] .= '<b>Now: ' .
+                        $cache['sources'][$key]['description'] .= '<b>' .
                                 $now[$key] .  '</b><br>';
 
                 if (isset($next[$key]))
-                        $cache['sources'][$key]['description'] .= 'Next: ' .
-                                $next[$key];
+                        $cache['sources'][$key]['description'] .= $next[$key];
         }
 
         if (!isset($cache['expires']))
