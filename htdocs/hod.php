@@ -100,6 +100,7 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
                                 ' -K ' . escapeshellarg('PROTOCOL://HOST/' .
                                                 basename($_SERVER['SCRIPT_NAME']) .
                                                 '?' . ($cookiehack ? 'SESSION&' : '') .
+                                                't=' . time() . '&' .
                                                 'key=' . urlencode($src));
                 }
 
