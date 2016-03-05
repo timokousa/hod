@@ -62,7 +62,7 @@ $urlbase = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
 $session = '';
 if (session_id() && !ini_get('session.use_only_cookies') &&
                 (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
-        $session = session_name() . '=' . session_id() . '&';
+        $session = session_name() . '=' . session_id();
 
 ?>
 <html>
@@ -112,7 +112,7 @@ foreach ($cache['sources'] as $key => $src) {
    </span>
   </a>
   <span>
-   <a href="<?=$urlbase?>/hod.php?<?=(isset($src['encrypt']) && $src['encrypt']) ? $session : ''?>src=<?=urlencode($key)?>&file=<?=urlencode($key)?>.m3u8">
+   <a href="<?=$urlbase?>/hod.php/<?=urlencode($key)?>/<?=urlencode($key)?>.m3u8<?=(isset($src['encrypt']) && $src['encrypt']) ? '?' . $session : ''?>">
     (direct&nbsp;link)
    </a>
   </span>

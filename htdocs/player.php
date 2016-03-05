@@ -57,14 +57,13 @@ if (isset($cache['sources'][$src]) &&
                 $cache['sources'][$src]['encrypt'] && session_id() &&
                 !ini_get('session.use_only_cookies') &&
                 (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
-        $session = session_name() . '=' . session_id() . '&';
+        $session = '?' . session_name() . '=' . session_id();
 
 if ($src && isset($cache['sources'][$src]))
         $videosrc = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
                 $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) .
-                '/hod.php?' . $session .
-                'src=' . urlencode($src) . '&' .
-                'file=' . urlencode($src) . '.m3u8';
+                '/hod.php/' . urlencode($src) . '/' .
+                urlencode($src) . '.m3u8' . $session;
 
 if (!isset($_SESSION['player']) ||
                 !in_array($_SESSION['player'], array('html5', 'vlc'))) {

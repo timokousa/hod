@@ -33,9 +33,13 @@ if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure') && $session) {
                 $_SESSION['HTTPS'] = true;
 }
 
-$file = isset($_GET['file']) ? $_GET['file'] : false;
 $key = isset($_GET['key']) ? $_GET['key'] : false;
-$src = isset($_GET['src']) ? $_GET['src'] : false;
+$file = isset($_SERVER['PATH_INFO']) ? basename($_SERVER['PATH_INFO']) : false;
+$src = isset($_SERVER['PATH_INFO']) ?
+        basename(dirname($_SERVER['PATH_INFO'])) : false;
+
+if ('..' === $src)
+        $src = false;
 
 if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
         if (!isset($cache['sources']))
@@ -63,16 +67,15 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
                         ' -p ' . escapeshellarg('data' .
                                         DIRECTORY_SEPARATOR . $src .
                                         DIRECTORY_SEPARATOR . $src) .
-                        ' -u ' . escapeshellarg(($cookiehack ?
-                                                'PROTOCOL' : 'http') .
-                                        '://HOST/' .
+                        ' -u ' . escapeshellarg(($cookiehack ? 'PROTOCOL://HOST/' :
+                                                'http://PROXY/') .
                                         basename($_SERVER['SCRIPT_NAME']) .
-                                        '?' . ($cookiehack ? 'SESSION&' : '') .
-                                        'src=' . urlencode($src) .
-                                        '&file=') .
+                                        '/' . urlencode($src) . '/') .
                         ' -U ' . escapeshellarg(($cookiehack ?
-                                                'http://HOST/' : '') . 'data/' .
-                                        urlencode($src) . '/') .
+                                                'http://PROXY/' .
+                                                basename($_SERVER['SCRIPT_NAME']) .
+                                                '/' . urlencode($src) . '/' :
+                                                urlencode($src) . '/')) .
                         ' -w ' . escapeshellarg($workdir);
 
                 if (isset($ffopts))
@@ -159,20 +162,20 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
 }
 
 if ($file && $src) {
-        $plfile = 'data' . DIRECTORY_SEPARATOR . $src .
+        $realfile = 'data' . DIRECTORY_SEPARATOR . $src .
                 DIRECTORY_SEPARATOR . $file;
         $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
 
         for ($i = 0; $i < 30; $i++) {
                 clearstatcache();
 
-                if (file_exists($plfile) || !file_exists($tsfile))
+                if (file_exists($realfile) || !file_exists($tsfile))
                         break;
 
                 sleep(1);
         }
 
-        if (preg_match('/\.m3u8$/i', $file) && file_exists($plfile)) {
+        if (preg_match('/\.m3u8$/i', $file) && file_exists($realfile)) {
                 ob_start();
                 ob_start('ob_gzhandler');
 
@@ -184,23 +187,32 @@ if ($file && $src) {
                 $host = '://' . $_SERVER['HTTP_HOST'] .
                         dirname($_SERVER['SCRIPT_NAME']) . '/';
 
-                $session = '?';
+                if (!isset($proxy))
+                        $proxy = $_SERVER['HTTP_HOST'] .
+                                dirname($_SERVER['SCRIPT_NAME']);
+
+                $session = '';
                 if (session_id() && !ini_get('session.use_only_cookies') &&
                                 (isset($_SERVER['HTTPS']) ||
                                  !ini_get('session.cookie_secure')))
-                        $session .= session_name() . '=' . session_id() . '&';
+                        $session = session_name() . '=' . session_id();
 
                 echo str_replace(array(
                                         'PROTOCOL://',
                                         '://HOST/',
-                                        '?SESSION&'
+                                        '://PROXY/',
+                                        '?SESSION&',
+                                        '.m3u8'
                                       ),
                                 array(
                                         $protocol,
                                         $host,
-                                        $session
+                                        '://' . $proxy . '/',
+                                        $session ? '?' . $session . '&' : '?',
+                                        '.m3u8' . (($cookiehack && $session) ?
+                                                '?' . $session : '')
                                      ),
-                                file_get_contents($plfile));
+                                file_get_contents($realfile));
 
                 if (!session_id() &&
                                 strpos(ob_get_contents(),
@@ -209,6 +221,7 @@ if ($file && $src) {
                         header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
                 }
 
+                header('Access-Control-Allow-Origin: *');
                 header('Content-Type: application/x-mpegURL');
                 ob_end_flush();
 
@@ -216,6 +229,15 @@ if ($file && $src) {
                 ob_end_flush();
 
                 touch($tsfile);
+
+                exit;
+        }
+        else if (file_exists($realfile)) {
+                header('Access-Control-Allow-Origin: *');
+                header('Content-Length: ' . filesize($realfile));
+                header('Content-Type: video/MP2T');
+
+                readfile($realfile);
 
                 exit;
         }
@@ -235,6 +257,7 @@ if ($key) {
                         header('Cache-Control: no-cache, must-revalidate');
                         header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
                 }
+                header('Access-Control-Allow-Origin: *');
                 header('Content-Type: application/octet-stream');
                 header('Content-Length: ' . ob_get_length());
 
