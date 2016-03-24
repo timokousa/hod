@@ -59,9 +59,9 @@ if ($src && isset($cache['sources'][$src])) {
                         touch($file);
 
                         exec('nice ffmpeg' .
+                                        ' -ss ' . $thumbnail_position .
                                         ' -i ' . escapeshellarg(
                                                 $cache['sources'][$src]['input']) .
-                                        ' -ss ' . $thumbnail_position .
                                         ' -vframes 1' .
                                         ' -vf thumbnail,scale=iw*sar/2:ih/2' .
                                         ' -y ' . escapeshellarg($file));
