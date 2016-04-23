@@ -27,6 +27,11 @@ a:visited {
  text-decoration: none;
 }
 
+a:active {
+ color: red;
+ background-color: lightblue;
+}
+
 body {
  margin: 0;
  padding: 0;
