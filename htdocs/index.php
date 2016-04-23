@@ -74,6 +74,9 @@ if (session_id() && !ini_get('session.use_only_cookies') &&
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="play.png" />
+  <link rel="apple-touch-startup-image" href="play.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script type="text/javascript" src="javascript.js"></script>
  </head>
  <body onload="thumbs_up()">
@@ -112,8 +115,9 @@ foreach ($cache['sources'] as $key => $src) {
    </span>
   </a>
   <span>
+   &nbsp;
    <a href="<?=$urlbase?>/hod.php/<?=urlencode($key)?>/<?=urlencode($key)?>.m3u8<?=(isset($src['encrypt']) && $src['encrypt']) ? '?' . $session : ''?>">
-    (direct&nbsp;link)
+    <img src="img.php?h=15&w=15" alt="direct link">
    </a>
   </span>
   <br>

@@ -76,9 +76,12 @@ if (!isset($_SESSION['player']) ||
 $player = '';
 
 if ($_SESSION['player'] == 'html5') {
-        $player = '<video autoplay onClick="play_video();" id="video"' .
+        $player = '<video' . ((isset($cache['sources'][$src]['live']) &&
+                                $cache['sources'][$src]['live']) ?
+                        '' : ' controls' ) .
+                ' onClick="play_video();" id="video"' .
                 ' width="640px" height="360px" src="' . $videosrc . '"' .
-                ' poster="play.png"' .
+                ' poster="wait.png"' .
                 ' type="application/x-mpegURL">' .
                 '<a href="' . $videosrc . '">direct link</a>' .
                 '</video>';
@@ -110,12 +113,17 @@ $description = isset($cache['sources'][$src]) ?
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
+  <link rel="apple-touch-startup-image" href="play.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript" src="javascript.js"></script>
 <?php } ?>
  </head>
  <body<?php if ($_SESSION['player'] == 'html5')
-        echo ' onload="load_poster(' . "'" . urlencode($src) . "'" . ')"' ?>>
+        echo ' onload="check_stream_status(document.getElementById(\'video\').src, ' .
+        "'" . urlencode($src) . "'" . ');' .
+        ' window.addEventListener(\'orientationchange\', orientation_check);"' ?>>
   <div class="player">
    <?=$player?>
    <form method="post">
@@ -128,8 +136,12 @@ $description = isset($cache['sources'][$src]) ?
     <?=$description?>
     <br>
     <br>
-    <a href="<?=$videosrc?>">direct link</a>
-    <div class="right"><a href=".">back</a></div>
+    &nbsp;
+    <a href="<?=$videosrc?>"><img src="img.php?h=30&w=30" alt="direct link"></a>
+    <div class="right">
+     <a><img class="flip" src="img.php?h=30&w=30" alt="back" onClick="window.history.back();"></a>
+     &nbsp;
+    </div>
    </div>
   </div>
  </body>

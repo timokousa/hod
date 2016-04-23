@@ -23,6 +23,7 @@ include_once 'rc.php';
 $src = isset($_GET['src']) ? $_GET['src'] : false;
 $width = (isset($_GET['w']) && is_numeric($_GET['w'])) ? $_GET['w'] : false;
 $height = (isset($_GET['h']) && is_numeric($_GET['h'])) ? $_GET['h'] : false;
+$icon = isset($_GET['icon']) ? $_GET['icon'] : false;
 
 if (!isset($cache['sources']))
         include_once 'sources.php';
@@ -41,7 +42,16 @@ if (!isset($cache['thumbs_purged']) ||
                         @unlink($thumb);
 }
 
-$play = imagecreatefrompng('play.png');
+switch ($icon) {
+        case "wait":
+                $icon = imagecreatefrompng('wait.png');
+                break;
+        case "error":
+                $icon = imagecreatefrompng('error.png');
+                break;
+        default:
+                $icon = imagecreatefrompng('play.png');
+}
 
 $thumb = null;
 
@@ -85,8 +95,8 @@ if ($src && isset($cache['sources'][$src])) {
         }
 }
 
-$w = $width ? $width : max(imagesx($play), imagesx($thumb));
-$h = $height ? $height : max(imagesy($play), imagesy($thumb));
+$w = $width ? $width : max(imagesx($icon), imagesx($thumb));
+$h = $height ? $height : max(imagesy($icon), imagesy($thumb));
 
 $img = imagecreatetruecolor($w, $h);
 imagefill($img, 0, 0, imagecolorallocatealpha($img, 0, 0, 0, 127));
@@ -106,16 +116,16 @@ if ($thumb) {
                         $w, $h, imagesx($thumb), imagesy($thumb));
 }
 
-$r = min(imagesx($img) / imagesx($play), imagesy($img) / imagesy($play));
+$r = min(imagesx($img) / imagesx($icon), imagesy($img) / imagesy($icon));
 
-$w = imagesx($play) * $r;
-$h = imagesy($play) * $r;
+$w = imagesx($icon) * $r;
+$h = imagesy($icon) * $r;
 
 $x = (imagesx($img) - $w) / 2;
 $y = (imagesy($img) - $h) / 2;
 
-imagecopyresampled($img, $play, $x, $y, 0, 0,
-                $w, $h, imagesx($play), imagesy($play));
+imagecopyresampled($img, $icon, $x, $y, 0, 0,
+                $w, $h, imagesx($icon), imagesy($icon));
 
 ob_start();
 

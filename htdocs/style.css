@@ -92,3 +92,7 @@ span {
 .tiny {
  font-size: 0.8em;
 }
+
+.flip {
+ transform: scaleX(-1);
+}

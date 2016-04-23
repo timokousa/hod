@@ -58,18 +58,80 @@ function thumbs_up() {
                 document.addEventListener('scroll', thumbs_up);
 }
 
-function load_poster(src) {
-        var video = document.getElementById('video');
-
-        if (video)
-                video.poster = "img.php?src=" + src;
-}
-
 function play_video() {
         var video = document.getElementById('video');
 
-        if (video) {
+        if (video && video.paused)
                 video.play();
-                video.webkitEnterFullScreen();
+
+        orientation_check();
+}
+
+function orientation_check() {
+        var video = document.getElementById('video');
+
+        if (!video)
+                return;
+
+        switch (window.orientation) {
+                case -90:
+                case 90:
+                        if (!video.webkitDisplayingFullscreen && !video.paused)
+                                video.webkitEnterFullScreen();
+                        break;
+                default:
+                        if (video.webkitDisplayingFullscreen)
+                                video.webkitExitFullScreen();
         }
+}
+
+function check_stream_status(url, src) {
+        var video = document.getElementById('video');
+
+        if (video && src)
+                video.poster = "img.php?icon=wait&src=" + src;
+
+        var http = new XMLHttpRequest();
+        http.open('get', url.replace(/^.*\/hod.php/, 'hod.php'), true);
+
+        http.onreadystatechange = function () {
+                if (http.readyState != 4)
+                        return;
+
+                if (video && src && http.status != 200) {
+                        video.poster = "img.php?icon=error&src=" + src;
+
+                        var timeout = http.getResponseHeader('Retry-After');
+
+                        if (!timeout)
+                                timeout = 10;
+
+                        setTimeout(function() {
+                                        check_stream_status(url, src);
+                                        }, timeout * 1000);
+
+                        return;
+                }
+
+                var stream_inf = false;
+                var tmp = http.responseText.split("\n");
+
+                for (var i = 0; i < tmp.length; i++) {
+                        if (tmp[i].match(/^#EXT-X-STREAM-INF/))
+                                stream_inf = true;
+                        if (tmp[i].match(/^#/))
+                                continue;
+                        if (stream_inf) {
+                                check_stream_status(tmp[i], src);
+                                return;
+                        }
+                }
+
+                if (video && src)
+                        video.poster = "img.php?icon=play&src=" + src;
+
+                play_video();
+        }
+
+        http.send();
 }
