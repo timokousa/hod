@@ -146,6 +146,10 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
         fprintf(fp, "#EXT-X-TARGETDURATION:%u\n", tdur);
         fprintf(fp, "#EXT-X-MEDIA-SEQUENCE:%u\n", tmp ? tmp->index : 0);
 
+        if (!tmp || tmp->index == 0)
+                fprintf(fp, "#EXT-X-PLAYLIST-TYPE:%s\n",
+                                the_end ? "VOD" : "EVENT");
+
         if (url_prefix) {
                 basec = strdup(fmt);
                 basen = basename(basec);
