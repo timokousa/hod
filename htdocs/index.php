@@ -76,7 +76,6 @@ if (session_id() && !ini_get('session.use_only_cookies') &&
   <link rel="apple-touch-icon" href="play.png" />
   <link rel="apple-touch-startup-image" href="play.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script type="text/javascript" src="javascript.js"></script>
  </head>
  <body onload="thumbs_up()">
@@ -106,7 +105,7 @@ if (!is_writable('data'))
 foreach ($cache['sources'] as $key => $src) {
 ?>
   <hr>
-  <a href="player.php?src=<?=urlencode($key)?>">
+  <a onClick="window.location='player.php?src=<?=urlencode($key)?>';">
    <div class="thumb left">
     <img src="img.php?w=128&h=72" class="thumbnail" alt="img.php?w=128&h=72&src=<?=urlencode($key)?>">
    </div>

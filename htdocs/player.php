@@ -115,7 +115,6 @@ $description = isset($cache['sources'][$src]) ?
   <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
   <link rel="apple-touch-startup-image" href="play.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript" src="javascript.js"></script>
 <?php } ?>
