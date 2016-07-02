@@ -104,7 +104,7 @@ ssize_t safe_read(int fd, uint8_t *buf, size_t count)
 }
 
 int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
-                char *url_prefix, char *key_url, int the_end)
+                char *url_prefix, char *key_url, int live, int the_end)
 {
         char *tmpfile, *basec = NULL, *basen, ivstr[AES_BLOCK_SIZE * 2 + 1];
         int i, tdur = 0;
@@ -146,7 +146,7 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
         fprintf(fp, "#EXT-X-TARGETDURATION:%u\n", tdur);
         fprintf(fp, "#EXT-X-MEDIA-SEQUENCE:%u\n", tmp ? tmp->index : 0);
 
-        if (!tmp || tmp->index == 0)
+        if (!live)
                 fprintf(fp, "#EXT-X-PLAYLIST-TYPE:%s\n",
                                 the_end ? "VOD" : "EVENT");
 
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
                                         printf("writing %s\n", plist);
 
                                 playlist(seg, plist, fmt, keyfile,
-                                                url_prefix, key_url, 0);
+                                                url_prefix, key_url, count, 0);
                         }
 
                         if (count && index > count) {
@@ -775,7 +775,7 @@ int main(int argc, char *argv[])
                 if (verbose)
                         printf("writing %s\n", plist);
 
-                playlist(seg, plist, fmt, keyfile, url_prefix, key_url, 1);
+                playlist(seg, plist, fmt, keyfile, url_prefix, key_url, count, 1);
         }
 
         if (count && index > count) {
