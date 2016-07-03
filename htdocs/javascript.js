@@ -114,17 +114,34 @@ function check_stream_status(url, src) {
                 }
 
                 var stream_inf = false;
+                var duration = 10;
+                var segcount = 0;
+                var end = false;
+
                 var tmp = http.responseText.split("\n");
 
                 for (var i = 0; i < tmp.length; i++) {
+                        if (tmp[i].match(/^#EXT-X-TARGETDURATION/))
+                                duration = tmp[i].match(/^#EXT-X-TARGETDURATION:(\d+)/)[1];
                         if (tmp[i].match(/^#EXT-X-STREAM-INF/))
                                 stream_inf = true;
+                        if (tmp[i].match(/^#EXT-X-ENDLIST/))
+                                end = true;
+                        if (tmp[i].match(/^#EXTINF/))
+                                segcount++;
                         if (tmp[i].match(/^#/))
                                 continue;
                         if (stream_inf) {
                                 check_stream_status(tmp[i], src);
                                 return;
                         }
+                }
+
+                if (segcount < 3 && !end) {
+                        setTimeout(function() {
+                                        check_stream_status(url, src);
+                                        }, duration * 1000);
+                        return;
                 }
 
                 if (video && src)
