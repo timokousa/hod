@@ -16,7 +16,7 @@ ABOUT
 
 REQUIREMENTS
 
- Bash4 & PHP for the scripts.
+ PHP for the scripts.
  FFmpeg for transcoding.
  OpenSSL for AES encryption.
 

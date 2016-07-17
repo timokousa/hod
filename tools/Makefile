@@ -22,7 +22,7 @@ all: segmenter
 
 install: segmenter
 	install segmenter $(PREFIX)/bin
-	install hod $(PREFIX)/bin
+	install hod.php $(PREFIX)/bin/hod
 
 uninstall:
 	rm $(PREFIX)/bin/segmenter

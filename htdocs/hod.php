@@ -41,7 +41,9 @@ $src = isset($_SERVER['PATH_INFO']) ?
 if ('..' === $src)
         $src = false;
 
-if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
+if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
+                        DIRECTORY_SEPARATOR . $src . '.m3u8') &&
+                !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.lock')) {
         if (!isset($cache['sources']))
                 include_once 'sources.php';
 
@@ -87,9 +89,12 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
                 if ($burn_subs)
                         $opts .= ' -S';
 
+                if ($hlsv3)
+                        $opts .= ' -3';
+
                 if (isset($cache['sources'][$src]['live']) &&
                                 $cache['sources'][$src]['live']) {
-                        $opts .= ' -c ' . escapeshellarg($tsfile) .
+                        $opts .= ' -C ' . escapeshellarg($tsfile) .
                                 ' -e' .
                                 ' -n 6';
                 }
@@ -108,7 +113,7 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
                 }
 
                 exec('hod' . $opts .
-                                ' ' . escapeshellarg(
+                                ' -i ' . escapeshellarg(
                                         $cache['sources'][$src]['input']) .
                                 ' > /dev/null 2> /dev/null &');
 
@@ -137,7 +142,6 @@ if ($src && !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.streams')) {
                                         @rmdir($dir);
 
                                         @unlink($prefix . '.timestamp');
-                                        @unlink($prefix . '.streams');
                                         @unlink($prefix . '.key');
 
                                         unset($dirs[$i]);
@@ -166,14 +170,15 @@ if ($file && $src) {
                 DIRECTORY_SEPARATOR . $file;
         $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
 
-        for ($i = 0; $i < 30; $i++) {
-                clearstatcache();
+        if (preg_match('/\.m3u8$/i', $file))
+                for ($i = 0; $i < 30; $i++) {
+                        clearstatcache();
 
-                if (file_exists($realfile) || !file_exists($tsfile))
-                        break;
+                        if (file_exists($realfile) || !file_exists($tsfile))
+                                break;
 
-                sleep(1);
-        }
+                        sleep(1);
+                }
 
         if (preg_match('/\.m3u8$/i', $file) && file_exists($realfile)) {
                 ob_start();
@@ -232,7 +237,7 @@ if ($file && $src) {
 
                 exit;
         }
-        else if (file_exists($realfile)) {
+        else if (preg_match('/\.ts$/i', $file) && file_exists($realfile)) {
                 header('Access-Control-Allow-Origin: *');
                 header('Content-Length: ' . filesize($realfile));
                 header('Content-Type: video/MP2T');
