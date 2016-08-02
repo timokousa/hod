@@ -15,10 +15,14 @@
 #   You should have received a copy of the GNU General Public License
 #   along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 
-CFLAGS += -Wall -g -lcrypto
+CFLAGS += -Wall -g
+LDFLAGS += -lcrypto
 PREFIX ?= /usr/local
 
 all: segmenter
+
+%: %.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 install: segmenter
 	install segmenter $(PREFIX)/bin
