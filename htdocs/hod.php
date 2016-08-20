@@ -169,12 +169,15 @@ if ($file && $src) {
         $realfile = 'data' . DIRECTORY_SEPARATOR . $src .
                 DIRECTORY_SEPARATOR . $file;
         $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
+        $lockfile = $workdir . DIRECTORY_SEPARATOR . $src . '.lock';
 
         if (preg_match('/\.m3u8$/i', $file))
                 for ($i = 0; $i < 30; $i++) {
                         clearstatcache();
 
-                        if (file_exists($realfile) || !file_exists($tsfile))
+                        if (file_exists($realfile) ||
+                                        (filemtime($tsfile) + 3 < time() &&
+                                         !file_exists($lockfile)))
                                 break;
 
                         sleep(1);
