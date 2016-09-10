@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
         int fd, afe, afl, pl_st, count = 0, opt, force = 0, epoch = 0,
             seg_len = 10, verbose = 0, audio_pts = 1, systime = 0, i,
             pes_remaining[MAX_PIDS] = { 0 }, limbo = 0, buf_size = TS_SIZE * 2,
-            buf_n = 0, wbuf_n = 0, pesses = 0;
+            buf_n = 0, wbuf_n = 0, pesses = 0, input = STDIN_FILENO;
         unsigned int index = 0, nameindex, disco = 0, bits = 0, bandwidth = 0;
         char *fname, *fmt, *plist = NULL, *tmpfile, *keepalive = NULL,
              *keyfile = NULL, *url_prefix = NULL, *key_url = NULL;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
                       iv_init[AES_BLOCK_SIZE], ebuf[WBUF_SIZE];
         AES_KEY aes_key;
 
-        while ((opt = getopt(argc, argv, "ac:efhi:k:K:n:p:rst:U:v")) != -1) {
+        while ((opt = getopt(argc, argv, "ac:efhi:k:K:n:p:rst:T:U:v")) != -1) {
                 switch (opt) {
                         case 'a':
                                 audio_pts = 0;
@@ -241,15 +241,15 @@ int main(int argc, char *argv[])
                                 break;
                         case 'h':
                                 printf("TS Segmenter 0.1 (C) Timo Kousa\n");
-                                printf("Reads mpeg-TS from stdin and writes it to files\n\n");
-                                printf("Usage: %s [options] output_format < input\n\n",
+                                printf("Reads mpeg-TS from a file and writes it to smaller files\n\n");
+                                printf("Usage: %s [options] -i input output_format\n\n",
                                                 argv[0]);
                                 printf("Options:\n");
                                 printf(" -a             use the first detected video stream for PTS instead of audio\n");
                                 printf(" -c <file>      \"keepalive\" file\n");
                                 printf(" -e             use time() as index in filenames\n");
                                 printf(" -f             force overwrite of output files\n");
-                                printf(" -i <pid>       use <pid> for PTS\n");
+                                printf(" -i <file>      use <file> for input (default: stdin)\n");
                                 printf(" -k <keyfile>   keyfile for openssl aes encryption\n");
                                 printf(" -K <url>       url for aes key in the playlist\n");
                                 printf(" -n <count>     keep <count> segments in the playlist (0 keeps all)\n");
@@ -257,12 +257,17 @@ int main(int argc, char *argv[])
                                 printf(" -r             randomize every IV\n");
                                 printf(" -s             use the system time instead of PTS\n");
                                 printf(" -t <sec>       target duration of a segment (default: 10)\n");
+                                printf(" -T <pid>       use <pid> for PTS\n");
                                 printf(" -U <url>       url prefix for files in the playlist\n");
                                 printf(" -v             increase verbosity\n");
                                 printf(" output_format  output filename format, use %%u as the index e.g. foo-%%u.ts\n\n");
                                 return EXIT_SUCCESS;
                         case 'i':
-                                tpid = atoi(optarg);
+                                input = open(optarg, O_RDONLY);
+                                if (input == -1) {
+                                        fprintf(stderr, "could not open input\n");
+                                        return EXIT_FAILURE;
+                                }
                                 break;
                         case 'k':
                                 keyfile = optarg;
@@ -284,6 +289,9 @@ int main(int argc, char *argv[])
                                 break;
                         case 't':
                                 seg_len = atoi(optarg);
+                                break;
+                        case 'T':
+                                tpid = atoi(optarg);
                                 break;
                         case 'U':
                                 url_prefix = optarg;
@@ -379,7 +387,7 @@ int main(int argc, char *argv[])
         if (verbose)
                 printf("writing %s ..\n", fname);
 
-        while (safe_read(STDIN_FILENO, ts, TS_SIZE) == TS_SIZE) {
+        while (safe_read(input, ts, TS_SIZE) == TS_SIZE) {
                 if (ts[0] != 0x47) {
                         fprintf(stderr, "incoming data is not TS\n");
                         return EXIT_FAILURE;
@@ -732,6 +740,9 @@ int main(int argc, char *argv[])
                         buf_n += TS_SIZE;
                 }
         }
+
+        if (input != STDIN_FILENO)
+                close(input);
 
         if (keyfile) {
                 i = AES_BLOCK_SIZE - (wbuf_n % AES_BLOCK_SIZE);

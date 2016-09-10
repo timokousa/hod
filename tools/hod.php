@@ -277,11 +277,10 @@ if (!isset($opts['3'])) {
                 exec('segmenter' .
                                 $seg_opts .
                                 ' -p ' . escapeshellarg($m3u8) .
+                                ' -i ' . escapeshellarg($fifo) .
                                 ' ' . escapeshellarg($datadir . DIRECTORY_SEPARATOR .
                                         $prefix . '.audio.' . $lang . '.%u.ts') .
-                                ' > /dev/null 2> /dev/null' .
-                                ' < ' . escapeshellarg($fifo) .
-                                ' &');
+                                ' > /dev/null 2> /dev/null &');
 
                 $files[] = $m3u8;
         }
@@ -335,11 +334,10 @@ if (count($video_indexes)) {
                                 ((isset($opts['3']) && count($audio_indexes)) ?
                                  '' : ' -a') .
                                 ' -p ' . escapeshellarg($m3u8) .
+                                ' -i ' . escapeshellarg($fifo) .
                                 ' ' . escapeshellarg($datadir . DIRECTORY_SEPARATOR .
                                         $prefix . '.video.' . $key . '.%u.ts') .
-                                ' > /dev/null 2> /dev/null' .
-                                ' < ' . escapeshellarg($fifo) .
-                                ' &');
+                                ' > /dev/null 2> /dev/null &');
 
                 $files[] = $m3u8;
         }
@@ -380,11 +378,10 @@ if (count($audio_indexes)) {
                 exec('segmenter' .
                                 $seg_opts .
                                 ' -p ' . escapeshellarg($m3u8) .
+                                ' -i ' . escapeshellarg($fifo) .
                                 ' ' . escapeshellarg($datadir . DIRECTORY_SEPARATOR .
                                         $prefix . '.audio.' . $lang . '.%u.ts') .
-                                ' > /dev/null 2> /dev/null' .
-                                ' < ' . escapeshellarg($fifo) .
-                                ' &');
+                                ' > /dev/null 2> /dev/null &');
 
                 $files[] = $m3u8;
         }
