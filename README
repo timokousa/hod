@@ -16,7 +16,7 @@ ABOUT
 
 REQUIREMENTS
 
- PHP for the scripts.
+ PHP (cgi/fpm, cli, & gd) for the scripts.
  FFmpeg for transcoding.
  OpenSSL for AES encryption.
 
@@ -25,13 +25,21 @@ INSTALL
 
  cd tools
  make
- make install
+ sudo make install
 
+ Test that the hod command works i.e. "cd /tmp; hod -i /path/to/some_video.file"
  Optionally copy the transcoding config file to /etc and edit as needed.
 
  Put the files in htdocs to appropriate place for webapps and make sure the
- data dir is writable by the daemon running the php. Edit rc.php, auth.php,
- sources.php and vdr*.php as needed.
+ 'data' dir and the '$workdir' are writable by the daemon running the php. Edit
+ rc.php, auth.php, sources.php and vdr*.php as needed.
+ Check that the webserver handles PATH_INFO correctly or the streams might
+ return 404.
+ Content will be sent over http but It is recommended to set up https for auth,
+ cookies and keys.
+
+ Point the browser to the webserver/dir and use the "add to home screen" to make
+ it behave like an app.
 
 
 CONTACT
