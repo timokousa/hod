@@ -71,6 +71,13 @@ if (!is_dir($datadir) && !mkdir($datadir)) {
         exit;
 }
 
+if (file_exists($datadir . DIRECTORY_SEPARATOR . $prefix . '.m3u8') &&
+                !isset($opts['f'])) {
+        echo "file exists " . $datadir . DIRECTORY_SEPARATOR .
+                $prefix .  '.m3u8' . "\n";
+        exit;
+}
+
 $seg_opts = '';
 if (isset($opts['C']))
         $seg_opts .= ' -c ' . escapeshellarg($opts['C']);
@@ -151,44 +158,47 @@ $subtitle_indexes = array();
 $default_audio = false;
 $default_subtitle = false;
 
-foreach ($probe->{'streams'} as $stream) {
-        if (!isset($stream->{'codec_type'}))
-                continue;
+if ($probe && isset($probe->{'streams'}))
+        foreach ($probe->{'streams'} as $stream) {
+                if (!isset($stream->{'codec_type'}))
+                        continue;
 
-        switch ($stream->{'codec_type'}) {
-                case "video":
-                        $video_indexes[] = $stream->{'index'};
-                        break;
-                case "audio":
-                        $audio_indexes[] = $stream->{'index'};
+                switch ($stream->{'codec_type'}) {
+                        case "video":
+                                $video_indexes[] = $stream->{'index'};
+                                break;
+                        case "audio":
+                                $audio_indexes[] = $stream->{'index'};
 
-                        if (isset($opts['l'], $stream->{'tags'},
-                                                $stream->{'tags'}->{'language'}) &&
-                                        stripos($stream->{'tags'}->{'language'},
-                                                $opts['l']) !== false &&
-                                        $default_audio === false)
-                                $default_audio = $stream->{'index'};
-                        break;
-                case "subtitle":
-                        $subtitle_indexes[] = $stream->{'index'};
+                                if (isset($opts['l'], $stream->{'tags'},
+                                                        $stream->{'tags'}->{'language'}) &&
+                                                stripos($stream->{'tags'}->{'language'},
+                                                        $opts['l']) !== false &&
+                                                $default_audio === false)
+                                        $default_audio = $stream->{'index'};
+                                break;
+                        case "subtitle":
+                                $subtitle_indexes[] = $stream->{'index'};
 
-                        if (isset($opts['l'], $stream->{'tags'},
-                                                $stream->{'tags'}->{'language'}) &&
-                                        stripos($stream->{'tags'}->{'language'},
-                                                $opts['l']) !== false &&
-                                        ($default_subtitle === false ||
-                                         $probe->{'streams'}[$default_subtitle]->{'codec_name'} == 'libzvbi_teletextdec'))
-                                $default_subtitle = $stream->{'index'};
-                        break;
+                                if (isset($opts['l'], $stream->{'tags'},
+                                                        $stream->{'tags'}->{'language'}) &&
+                                                stripos($stream->{'tags'}->{'language'},
+                                                        $opts['l']) !== false &&
+                                                ($default_subtitle === false ||
+                                                 $probe->{'streams'}[$default_subtitle]->{'codec_name'} == 'libzvbi_teletextdec'))
+                                        $default_subtitle = $stream->{'index'};
+                                break;
+                }
         }
-}
 
-if (count($audio_indexes) && $default_audio === false)
-        $default_audio = $audio_indexes[0];
+if (count($audio_indexes)) {
+        if ($default_audio === false)
+                $default_audio = $audio_indexes[0];
 
-while ($audio_indexes[0] != $default_audio) {
-        $tmp = array_shift($audio_indexes);
-        $audio_indexes[] = $tmp;
+        while ($audio_indexes[0] != $default_audio) {
+                $tmp = array_shift($audio_indexes);
+                $audio_indexes[] = $tmp;
+        }
 }
 
 $ffopts = '';
@@ -241,7 +251,7 @@ if (count($video_indexes)) {
         $ffopts .= escapeshellarg($tmp);
 }
 
-$manifest = "#EXTM3U\n";
+$manifest = '';
 
 if (!isset($opts['3'])) {
         foreach ($audio_indexes as $index) {
@@ -387,12 +397,15 @@ if (count($audio_indexes)) {
         }
 }
 
-$m3u8 = $datadir . DIRECTORY_SEPARATOR . $prefix . '.m3u8';
+if ($manifest) {
+        $manifest = "#EXTM3U\n" . $manifest;
+        $m3u8 = $datadir . DIRECTORY_SEPARATOR . $prefix . '.m3u8';
 
-file_put_contents($m3u8 . '.part', $manifest);
-rename($m3u8 . '.part', $m3u8);
+        file_put_contents($m3u8 . '.part', $manifest);
+        rename($m3u8 . '.part', $m3u8);
 
-$files[] = $m3u8;
+        $files[] = $m3u8;
+}
 
 if (count($fifos)) {
         exec($nice . 'ffmpeg' . $ffopts);
