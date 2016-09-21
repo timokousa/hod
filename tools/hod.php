@@ -116,7 +116,7 @@ else {
 
         $audio['bw'] = "64000";
         $audio['codec'] = "mp4a.40.2";
-        $audio['ffopt'] = "-c:a libfaac -ac 2 -b:a " . $audio['bw'];
+        $audio['ffopt'] = "-c:a aac -ac 2 -b:a " . $audio['bw'];
 
         $profiles['cell']['bw'] = "400000";
         $profiles['cell']['width'] = "480";
