@@ -64,6 +64,9 @@ if (session_id() && !ini_get('session.use_only_cookies') &&
                 (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
         $session = session_name() . '=' . session_id();
 
+$reload = max(3, $cache['expires'] - time());
+header('X-update-divs: ' . $reload);
+
 ?>
 <html>
  <head>
@@ -78,7 +81,7 @@ if (session_id() && !ini_get('session.use_only_cookies') &&
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <script type="text/javascript" src="javascript.js"></script>
  </head>
- <body onload="thumbs_up()">
+ <body onload="thumbs_up(); setTimeout(function() { update_divs(); }, <?=$reload?> * 1000);">
   <div class="tiny" id="logout">
    <a href="?logout">Logout</a>
   </div>
@@ -120,7 +123,7 @@ foreach ($cache['sources'] as $key => $src) {
    </a>
   </span>
   <br>
-  <div class="tiny">
+  <div class="tiny" id="divup-<?=md5($key)?>">
    <?=$cache['sources'][$key]['description']?>
   </div>
 <?php

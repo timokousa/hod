@@ -104,6 +104,9 @@ $title = isset($cache['sources'][$src]) ?
 $description = isset($cache['sources'][$src]) ?
         $cache['sources'][$src]['description'] : '';
 
+$reload = max(3, $cache['expires'] - time());
+header('X-update-divs: ' . $reload);
+
 ?>
 <html>
  <head>
@@ -115,14 +118,13 @@ $description = isset($cache['sources'][$src]) ?
   <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
   <link rel="apple-touch-startup-image" href="play.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-<?php if ($_SESSION['player'] == 'html5') { ?>
   <script type="text/javascript" src="javascript.js"></script>
-<?php } ?>
  </head>
- <body<?php if ($_SESSION['player'] == 'html5')
-        echo ' onload="check_stream_status(document.getElementById(\'video\').src, ' .
+ <body onload="<?php if ($_SESSION['player'] == 'html5')
+        echo 'check_stream_status(document.getElementById(\'video\').src, ' .
         "'" . urlencode($src) . "'" . ');' .
-        ' window.addEventListener(\'orientationchange\', orientation_check);"' ?>>
+        ' window.addEventListener(\'orientationchange\', orientation_check); ';
+        ?>setTimeout(function() { update_divs(); }, <?=$reload?> * 1000);">
   <div class="player">
    <?=$player?>
    <form method="post">
@@ -132,7 +134,9 @@ $description = isset($cache['sources'][$src]) ?
    </form>
    <div>
     <h2><?=$title?></h2>
-    <?=$description?>
+    <div id="divup-<?=md5($src)?>">
+     <?=$description?>
+    </div>
     <br>
     <br>
     &nbsp;

@@ -152,3 +152,36 @@ function check_stream_status(url, src) {
 
         http.send();
 }
+
+function update_divs() {
+        var http = new XMLHttpRequest();
+        http.open('get', window.location.href, true);
+
+        http.onreadystatechange = function () {
+                if (http.readyState != 4 || http.status != 200)
+                        return;
+
+                var divs = http.responseXML.getElementsByTagName('div');
+
+                for (var i = 0; i < divs.length; i++) {
+                        if (!divs[i].id || divs[i].id.indexOf("divup-") != 0)
+                                continue;
+
+                        div = document.getElementById(divs[i].id);
+                        if (!div)
+                                continue;
+
+                        if (div.innerHTML != divs[i].innerHTML)
+                                div.innerHTML = divs[i].innerHTML;
+                }
+
+                var reload = http.getResponseHeader('X-update-divs');
+
+                if (reload)
+                        setTimeout(function() { update_divs(); },
+                                        reload * 1000);
+        }
+
+        http.responseType = "document";
+        http.send();
+}
