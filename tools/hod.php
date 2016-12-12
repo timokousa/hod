@@ -185,7 +185,8 @@ if ($probe && isset($probe->{'streams'}))
                                                 stripos($stream->{'tags'}->{'language'},
                                                         $opts['l']) !== false &&
                                                 ($default_subtitle === false ||
-                                                 $probe->{'streams'}[$default_subtitle]->{'codec_name'} == 'libzvbi_teletextdec'))
+                                                 stripos($probe->{'streams'}[$default_subtitle]->{'codec_name'},
+                                                         'teletext') !== false))
                                         $default_subtitle = $stream->{'index'};
                                 break;
                 }
@@ -204,7 +205,8 @@ if (count($audio_indexes)) {
 $ffopts = '';
 
 if (isset($opts['S']) && $default_subtitle !== false &&
-                $probe->{'streams'}[$default_subtitle]->{'codec_name'} == 'libzvbi_teletextdec') {
+                stripos($probe->{'streams'}[$default_subtitle]->{'codec_name'},
+                        'teletext') !== false) {
         $tmp = trim($probe->{'streams'}[$default_subtitle]->{'extradata'});
         $tmp = preg_replace('/^.*:\s*/', '', $tmp);
         $tmp = preg_replace('/[^0-9]*$/', '', $tmp);
