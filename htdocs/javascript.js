@@ -61,27 +61,21 @@ function thumbs_up() {
 function play_video() {
         var video = document.getElementById('video');
 
+        if (typeof videojs === 'function')
+                video = videojs(video);
+
         if (video && video.paused)
                 video.play();
-
-        orientation_check();
 }
 
-function orientation_check() {
+function set_poster(url) {
         var video = document.getElementById('video');
 
-        if (!video)
-                return;
-
-        switch (window.orientation) {
-                case -90:
-                case 90:
-                        if (!video.webkitDisplayingFullscreen && !video.paused)
-                                video.webkitEnterFullScreen();
-                        break;
-                default:
-                        if (video.webkitDisplayingFullscreen)
-                                video.webkitExitFullScreen();
+        if (video) {
+                if (typeof videojs === 'function')
+                        videojs(video).poster(url);
+                else
+                        video.poster = url;
         }
 }
 
@@ -89,17 +83,25 @@ function check_stream_status(url, src) {
         var video = document.getElementById('video');
 
         if (video && src)
-                video.poster = "img.php?icon=wait&src=" + src;
+                set_poster("img.php?icon=wait&src=" + src);
 
         var http = new XMLHttpRequest();
-        http.open('get', url.replace(/^.*\/hod.php/, 'hod.php'), true);
+        http.open('get', url, true);
 
         http.onreadystatechange = function () {
                 if (http.readyState != 4)
                         return;
 
                 if (video && src && http.status != 200) {
-                        video.poster = "img.php?icon=error&src=" + src;
+                        set_poster("img.php?icon=error&src=" + src);
+
+                        var img = document.createElement('img');
+                        img.alt = "error";
+                        img.id = "status";
+                        img.src = "img.php?h=30&w=30&icon=error";
+
+                        document.getElementById('status').parentElement.replaceChild(img,
+                                        document.getElementById('status'));
 
                         var timeout = http.getResponseHeader('Retry-After');
 
@@ -107,6 +109,9 @@ function check_stream_status(url, src) {
                                 timeout = 10;
 
                         setTimeout(function() {
+                                        img.alt = "starting";
+                                        img.src = "img.php?h=30&w=30&icon=wait";
+                                        img.className = "spinccw";
                                         check_stream_status(url, src);
                                         }, timeout * 1000);
 
@@ -138,18 +143,38 @@ function check_stream_status(url, src) {
                 }
 
                 if (segcount < 3 && !end) {
+                        var statusimg = document.getElementById('status');
+                        var style = (1 / (1 + segcount)) + "s rotateright infinite linear";
+
+                        statusimg.alt = "buffering";
+                        statusimg.style.MozAnimation = style;
+                        statusimg.style.webkitAnimation = style;
+
                         setTimeout(function() {
                                         check_stream_status(url, src);
-                                        }, duration * 1000);
+                                        }, duration * 500);
                         return;
                 }
 
                 if (video && src)
-                        video.poster = "img.php?icon=play&src=" + src;
+                        set_poster("img.php?icon=play&src=" + src);
 
                 play_video();
+
+                var readyimg = document.createElement('img');
+                readyimg.alt = "ready";
+                readyimg.id = "status";
+                readyimg.src = "img.php?h=30&w=30";
+
+                document.getElementById('status').parentElement.replaceChild(readyimg,
+                                document.getElementById('status'));
+
+                setTimeout(function() {
+                                document.getElementById('status').style.display = 'none';
+                                }, 3000);
         }
 
+        http.withCredentials = true;
         http.send();
 }
 

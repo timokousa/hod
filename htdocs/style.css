@@ -102,3 +102,45 @@ span {
 .flip {
  transform: scaleX(-1);
 }
+
+img.spincw {
+ -moz-animation:1s rotateright infinite linear;
+ -webkit-animation:1s rotateright infinite linear;
+}
+
+img.spinccw {
+ -moz-animation:1s rotateleft infinite linear;
+ -webkit-animation:1s rotateleft infinite linear;
+}
+
+@-moz-keyframes rotateright {
+ 0% {
+  -moz-transform:rotate(0deg);
+  -moz-transform-origin:50% 50%;
+ }
+ 100% { -moz-transform:rotate(360deg); }
+}
+
+@-webkit-keyframes rotateright {
+ 0% {
+  -webkit-transform:rotate(0deg);
+  -webkit-transform-origin:50% 50%;
+ }
+ 100% { -webkit-transform:rotate(360deg); }
+}
+
+@-moz-keyframes rotateleft {
+ 0% {
+  -moz-transform:rotate(0deg);
+  -moz-transform-origin:50% 50%;
+ }
+ 100% { -moz-transform:rotate(-360deg); }
+}
+
+@-webkit-keyframes rotateleft {
+ 0% {
+  -webkit-transform:rotate(0deg);
+  -webkit-transform-origin:50% 50%;
+ }
+ 100% { -webkit-transform:rotate(-360deg); }
+}

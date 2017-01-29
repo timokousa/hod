@@ -25,6 +25,15 @@ $session = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : null;
 if (!ini_get('session.use_only_cookies') && isset($_GET[session_name()]))
         $session = $_GET[session_name()];
 
+if (isset($_SERVER['HTTP_COOKIES']))
+        foreach (explode('; ', $_SERVER['HTTP_COOKIES']) as $cookie) {
+                $pair = explode('=', $cookie);
+                if ($pair[0] == session_name())
+                        $session = $pair[1];
+        }
+
+$session = split(',', $session)[0];
+
 if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure') && $session) {
         session_id($session);
         session_start();
@@ -229,7 +238,10 @@ if ($file && $src) {
                         header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
                 }
 
-                header('Access-Control-Allow-Origin: *');
+                header('Access-Control-Allow-Origin: ' .
+                                (isset($_SERVER['HTTP_ORIGIN']) ?
+                                 $_SERVER['HTTP_ORIGIN'] : '*'));
+                header('Access-Control-Allow-Credentials: true');
                 header('Content-Type: application/x-mpegURL');
                 ob_end_flush();
 
@@ -241,7 +253,10 @@ if ($file && $src) {
                 exit;
         }
         else if (preg_match('/\.ts$/i', $file) && file_exists($realfile)) {
-                header('Access-Control-Allow-Origin: *');
+                header('Access-Control-Allow-Origin: ' .
+                                (isset($_SERVER['HTTP_ORIGIN']) ?
+                                 $_SERVER['HTTP_ORIGIN'] : '*'));
+                header('Access-Control-Allow-Credentials: true');
                 header('Content-Length: ' . filesize($realfile));
                 header('Content-Type: video/MP2T');
 
@@ -265,7 +280,10 @@ if ($key) {
                         header('Cache-Control: no-cache, must-revalidate');
                         header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
                 }
-                header('Access-Control-Allow-Origin: *');
+                header('Access-Control-Allow-Origin: ' .
+                                (isset($_SERVER['HTTP_ORIGIN']) ?
+                                 $_SERVER['HTTP_ORIGIN'] : '*'));
+                header('Access-Control-Allow-Credentials: true');
                 header('Content-Type: application/octet-stream');
                 header('Content-Length: ' . ob_get_length());
 

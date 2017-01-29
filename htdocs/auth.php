@@ -61,8 +61,8 @@ if (isset($_POST['user'], $_POST['password'])) {
 if (!isset($_SESSION['user'], $_SESSION['password']) ||
                 !in_array(array($_SESSION['user'], $_SESSION['password']),
                         $passwd)) {
-        header("HTTP/1.0 401 Unauthorized");
-        header("Status: 401 Unauthorized");
+        header("HTTP/1.0 403 Forbidden");
+        header("Status: 403 Forbidden");
 ?>
 <html>
  <head>

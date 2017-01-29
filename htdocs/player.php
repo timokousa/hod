@@ -20,83 +20,40 @@
 
 include_once 'rc.php';
 
-cache_refresh();
-
 $src = isset($_GET['src']) ? $_GET['src'] : null;
 
 if ($src && !isset($cache['sources']))
         include_once 'sources.php';
 
-if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure'))
+if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')) {
         session_start();
 
-if (isset($cache['sources'][$src]) &&
+        if (isset($cache['sources'][$src]) &&
                         isset($cache['sources'][$src]['encrypt']) &&
                         $cache['sources'][$src]['encrypt'])
-        include_once 'auth.php';
+                include_once 'auth.php';
+}
 
-if (isset($_POST['switch'])) {
-        if (isset($_SESSION['player']) && $_SESSION['player'] == 'vlc')
-                $_SESSION['player'] = 'html5';
-        else
-                $_SESSION['player'] = 'vlc';
-
-        header('Location: ' . (isset($_SERVER['HTTPS']) ?
-                                'https://' : 'http://') .
+if (isset($_SERVER['HTTPS'])) {
+        header('Location: http://' .
                         $_SERVER['HTTP_HOST'] .
                         $_SERVER['REQUEST_URI']);
 
         exit;
 }
 
+cache_refresh();
+
 $videosrc = '';
 
-$session = '';
-if (isset($cache['sources'][$src]) &&
-                isset($cache['sources'][$src]['encrypt']) &&
-                $cache['sources'][$src]['encrypt'] && session_id() &&
-                !ini_get('session.use_only_cookies') &&
-                (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
-        $session = '?' . session_name() . '=' . session_id();
-
 if ($src && isset($cache['sources'][$src]))
-        $videosrc = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
+        $videosrc = ((isset($cache['sources'][$src]['encrypt']) &&
+                        $cache['sources'][$src]['encrypt'] &&
+                        ini_get('session.cookie_secure')) ?
+                        'https://' : 'http://') .
                 $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) .
                 '/hod.php/' . urlencode($src) . '/' .
-                urlencode($src) . '.m3u8' . $session;
-
-if (!isset($_SESSION['player']) ||
-                !in_array($_SESSION['player'], array('html5', 'vlc'))) {
-        if (preg_match('/(android|iphone|ipad)/i', $_SERVER['HTTP_USER_AGENT']))
-                $_SESSION['player'] = 'html5';
-        else
-                $_SESSION['player'] = 'vlc';
-}
-
-$player = '';
-
-if ($_SESSION['player'] == 'html5') {
-        $player = '<video' . ((isset($cache['sources'][$src]['live']) &&
-                                $cache['sources'][$src]['live']) ?
-                        '' : ' controls' ) .
-                ' onClick="play_video();" id="video"' .
-                ' width="640px" height="360px" src="' . $videosrc . '"' .
-                ' poster="wait.png"' .
-                ' type="application/x-mpegURL">' .
-                '<a href="' . $videosrc . '">direct link</a>' .
-                '</video>';
-}
-elseif ($_SESSION['player'] == 'vlc') {
-        $player = '<object classid="clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921"' .
-                ' codebase="http://download.videolan.org/pub/videolan/vlc/last/win32/axvlc.cab">' .
-                '<embed type="application/x-vlc-plugin"' .
-                ' pluginspage="http://www.videolan.org"' .
-                ' toolbar="' . ((isset($cache['sources'][$src]['live']) &&
-                                $cache['sources'][$src]['live']) ?
-                        "false" : "true") . '"' .
-                ' width="640px" height="360px" src="' . $videosrc . '" />' .
-                '</object>';
-}
+                urlencode($src) . '.m3u8';
 
 $title = isset($cache['sources'][$src]) ?
         $cache['sources'][$src]['title'] : '';
@@ -104,7 +61,7 @@ $title = isset($cache['sources'][$src]) ?
 $description = isset($cache['sources'][$src]) ?
         $cache['sources'][$src]['description'] : '';
 
-$reload = max(3, $cache['expires'] - time());
+$reload = max(3, (isset($cache['expires']) ? $cache['expires'] : 0) - time());
 header('X-update-divs: ' . $reload);
 
 ?>
@@ -120,27 +77,22 @@ header('X-update-divs: ' . $reload);
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <script type="text/javascript" src="javascript.js"></script>
  </head>
- <body onload="<?php if ($_SESSION['player'] == 'html5')
-        echo 'check_stream_status(document.getElementById(\'video\').src, ' .
-        "'" . urlencode($src) . "'" . ');' .
-        ' window.addEventListener(\'orientationchange\', orientation_check); ';
-        ?>setTimeout(function() { update_divs(); }, <?=$reload?> * 1000);">
+ <body onload="check_stream_status('<?=$videosrc?>', '<?=urlencode($src)?>');
+ setTimeout(function() { update_divs(); }, <?=$reload?> * 1000);">
   <div class="player">
-   <?=$player?>
-   <form method="post">
-    <div class="right">
-     <input type="submit" name="switch" value="switch player" />
-    </div>
-   </form>
+   <video id="video" class="video-js vjs-default-skin" controls
+     width="640px" height="360px" poster="wait.png"
+     data-setup='{"html5":{"hls":{"withCredentials":true}}}'>
+    <source src="<?=$videosrc?>" type="application/x-mpegURL">
+   </video>
+   <div class="right">
+    <img id="status" src="img.php?h=30&w=30&icon=wait" class="spinccw">
+   </div>
    <div>
     <h2><?=$title?></h2>
     <div id="divup-<?=md5($src)?>">
      <?=$description?>
     </div>
-    <br>
-    <br>
-    &nbsp;
-    <a href="<?=$videosrc?>"><img src="img.php?h=30&w=30" alt="direct link"></a>
     <div class="right">
      <a><img class="flip" src="img.php?h=30&w=30" alt="back" onClick="window.history.back();"></a>
      &nbsp;

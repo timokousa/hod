@@ -56,15 +56,14 @@ foreach ($cache['sources'] as $src) {
         }
 }
 
-$urlbase = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') .
-        $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
+$urlbase = $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
 
 $session = '';
 if (session_id() && !ini_get('session.use_only_cookies') &&
                 (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure')))
         $session = session_name() . '=' . session_id();
 
-$reload = max(3, $cache['expires'] - time());
+$reload = max(3, (isset($cache['expires']) ? $cache['expires'] : 0) - time());
 header('X-update-divs: ' . $reload);
 
 ?>
@@ -118,7 +117,7 @@ foreach ($cache['sources'] as $key => $src) {
   </a>
   <span>
    &nbsp;
-   <a href="<?=$urlbase?>/hod.php/<?=urlencode($key)?>/<?=urlencode($key)?>.m3u8<?=(isset($src['encrypt']) && $src['encrypt']) ? '?' . $session : ''?>">
+   <a href="<?=((isset($_SERVER['HTTPS'], $src['encrypt']) && $src['encrypt']) ? 'https://' : 'http://') . $urlbase?>/hod.php/<?=urlencode($key)?>/<?=urlencode($key)?>.m3u8<?=(isset($src['encrypt']) && $src['encrypt']) ? '?' . $session : ''?>">
     <img src="img.php?h=15&w=15" alt="direct link">
    </a>
   </span>
