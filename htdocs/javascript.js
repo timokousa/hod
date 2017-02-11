@@ -17,6 +17,8 @@
    along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+var failed = false;
+
 function thumbs_up() {
         document.removeEventListener('scroll', thumbs_up);
 
@@ -93,6 +95,8 @@ function check_stream_status(url, src) {
                         return;
 
                 if (video && src && http.status != 200) {
+                        failed = true;
+
                         set_poster("img.php?icon=error&src=" + src);
 
                         var img = document.createElement('img');
@@ -103,15 +107,24 @@ function check_stream_status(url, src) {
                         document.getElementById('status').parentElement.replaceChild(img,
                                         document.getElementById('status'));
 
+                        var errortext = document.createElement('span');
+                        errortext.innerHTML = http.responseText.replace(/<[^>]*>/gm, '').trim().replace(/\n/gm, '<br>');
+                        errortext.className = "tooltiptext";
+
+                        document.getElementById('status').parentElement.insertBefore(errortext, img);
+
                         var timeout = http.getResponseHeader('Retry-After');
 
                         if (!timeout)
                                 timeout = 10;
 
                         setTimeout(function() {
+                                        document.getElementById('status').parentElement.removeChild(errortext);
+
                                         img.alt = "starting";
                                         img.src = "img.php?h=30&w=30&icon=wait";
                                         img.className = "spinccw";
+
                                         check_stream_status(url, src);
                                         }, timeout * 1000);
 
@@ -155,6 +168,9 @@ function check_stream_status(url, src) {
                                         }, duration * 500);
                         return;
                 }
+
+                if (failed)
+                        location.reload(true);
 
                 if (video && src)
                         set_poster("img.php?icon=play&src=" + src);

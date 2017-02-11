@@ -54,7 +54,7 @@ if (isset($opts['h'])) {
 }
 
 if (!isset($opts['i']) || !$opts['i']) {
-        echo "Input is required (-i)\n";
+        error_log("Input is required (-i)");
         exit;
 }
 
@@ -67,14 +67,14 @@ $files = array();
 $nice = '';
 
 if (!is_dir($datadir) && !mkdir($datadir)) {
-        echo "can not create directory $datadir\n";
+        error_log("can not create directory $datadir");
         exit;
 }
 
 if (file_exists($datadir . DIRECTORY_SEPARATOR . $prefix . '.m3u8') &&
                 !isset($opts['f'])) {
-        echo "file exists " . $datadir . DIRECTORY_SEPARATOR .
-                $prefix .  '.m3u8' . "\n";
+        error_log("file exists " . $datadir . DIRECTORY_SEPARATOR .
+                $prefix .  '.m3u8');
         exit;
 }
 
@@ -133,7 +133,7 @@ else {
 
 if (!file_exists($workdir)) {
         if (!mkdir($workdir)) {
-                echo "Failed to create directory $workdir\n";
+                error_log("Failed to create directory $workdir");
                 exit;
         }
 }
@@ -141,7 +141,7 @@ if (!file_exists($workdir)) {
 $lock = fopen($workdir . DIRECTORY_SEPARATOR . $prefix . '.lock', 'c');
 
 if (!flock($lock, LOCK_EX | LOCK_NB)) {
-        echo "Couldn't get the lock, script already running?\n";
+        error_log("Couldn't get the lock, script already running?");
         exit;
 }
 
@@ -274,7 +274,7 @@ if (!isset($opts['3'])) {
                         $prefix . '.audio.' . $lang . '.fifo';
 
                 if (@filetype($fifo) != 'fifo' && !posix_mkfifo($fifo, 0644)) {
-                        echo "could not create fifo\n";
+                        error_log("could not create fifo");
                         exit;
                 }
 
@@ -319,7 +319,7 @@ if (count($video_indexes)) {
                         $prefix . '.video.' . $key . '.fifo';
 
                 if (@filetype($fifo) != 'fifo' && !posix_mkfifo($fifo, 0644)) {
-                        echo "could not create fifo\n";
+                        error_log("could not create fifo");
                         exit;
                 }
 
@@ -375,7 +375,7 @@ if (count($audio_indexes)) {
                         $prefix . '.audio.' . $lang . '.fifo';
 
                 if (@filetype($fifo) != 'fifo' && !posix_mkfifo($fifo, 0644)) {
-                        echo "could not create fifo\n";
+                        error_log("could not create fifo");
                         exit;
                 }
 

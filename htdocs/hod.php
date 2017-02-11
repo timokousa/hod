@@ -20,6 +20,10 @@
 
 include_once 'rc.php';
 
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Origin: ' . (isset($_SERVER['HTTP_ORIGIN']) ?
+                        $_SERVER['HTTP_ORIGIN'] : '*'));
+
 $session = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : null;
 
 if (!ini_get('session.use_only_cookies') && isset($_GET[session_name()]))
@@ -124,7 +128,11 @@ if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
                 exec('hod' . $opts .
                                 ' -i ' . escapeshellarg(
                                         $cache['sources'][$src]['input']) .
-                                ' > /dev/null 2> /dev/null &');
+                                ' > /dev/null' .
+                                ' 2> ' . escapeshellarg(
+                                        $workdir . DIRECTORY_SEPARATOR .
+                                        $src . '.stderr') .
+                                ' &');
 
                 while (disk_free_space('data') < $df_threshold) {
                         if (!isset($dirs))
@@ -150,8 +158,9 @@ if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
 
                                         @rmdir($dir);
 
-                                        @unlink($prefix . '.timestamp');
                                         @unlink($prefix . '.key');
+                                        @unlink($prefix . '.stderr');
+                                        @unlink($prefix . '.timestamp');
 
                                         unset($dirs[$i]);
                                         continue 2;
@@ -238,10 +247,6 @@ if ($file && $src) {
                         header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
                 }
 
-                header('Access-Control-Allow-Origin: ' .
-                                (isset($_SERVER['HTTP_ORIGIN']) ?
-                                 $_SERVER['HTTP_ORIGIN'] : '*'));
-                header('Access-Control-Allow-Credentials: true');
                 header('Content-Type: application/x-mpegURL');
                 ob_end_flush();
 
@@ -253,10 +258,6 @@ if ($file && $src) {
                 exit;
         }
         else if (preg_match('/\.ts$/i', $file) && file_exists($realfile)) {
-                header('Access-Control-Allow-Origin: ' .
-                                (isset($_SERVER['HTTP_ORIGIN']) ?
-                                 $_SERVER['HTTP_ORIGIN'] : '*'));
-                header('Access-Control-Allow-Credentials: true');
                 header('Content-Length: ' . filesize($realfile));
                 header('Content-Type: video/MP2T');
 
@@ -280,10 +281,6 @@ if ($key) {
                         header('Cache-Control: no-cache, must-revalidate');
                         header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
                 }
-                header('Access-Control-Allow-Origin: ' .
-                                (isset($_SERVER['HTTP_ORIGIN']) ?
-                                 $_SERVER['HTTP_ORIGIN'] : '*'));
-                header('Access-Control-Allow-Credentials: true');
                 header('Content-Type: application/octet-stream');
                 header('Content-Length: ' . ob_get_length());
 
@@ -295,6 +292,8 @@ if ($key) {
 
 if ($src && isset($cache['sources'][$src])) {
         $err = '503 Service Temporarily Unavailable';
+
+        header('Access-Control-Expose-Headers: Retry-After');
         header('Retry-After: 10');
 }
 else
@@ -310,5 +309,9 @@ header('Status: ' . $err);
  </head>
  <body>
   <h1><?=$err?></h1>
+<pre>
+<?php if ($src && file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.stderr'))
+        readfile($workdir . DIRECTORY_SEPARATOR . $src . '.stderr'); ?>
+</pre>
  </body>
 </html>

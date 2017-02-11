@@ -69,7 +69,7 @@ header('X-update-divs: ' . $reload);
  <head>
   <title><?=$title?> - HOD player</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=640px" />
+  <meta name="viewport" content="width=640" />
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="icon" type="image/png" href="play.png" />
   <link rel="apple-touch-icon" href="img.php?src=<?=urlencode($src)?>" />
@@ -85,7 +85,7 @@ header('X-update-divs: ' . $reload);
      data-setup='{"html5":{"hls":{"withCredentials":true}}}'>
     <source src="<?=$videosrc?>" type="application/x-mpegURL">
    </video>
-   <div class="right">
+   <div class="right tooltip">
     <img id="status" src="img.php?h=30&w=30&icon=wait" class="spinccw">
    </div>
    <div>

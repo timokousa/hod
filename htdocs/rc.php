@@ -25,7 +25,7 @@ $burn_subs = true;
 $df_threshold = 2147483648;
 $thumbnail_position = '00:05:00';
 $cookiehack = false;
-#$ffopts = '';
+$ffopts = '-loglevel fatal';
 #$proxy = 'proxy.host.and/path';
 $hlsv3 = false;
 
