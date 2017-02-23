@@ -36,7 +36,7 @@ if (isset($_SERVER['HTTP_COOKIES']))
                         $session = $pair[1];
         }
 
-$session = split(',', $session)[0];
+$session = explode(',', $session)[0];
 
 if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure') && $session) {
         session_id($session);
