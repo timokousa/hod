@@ -95,8 +95,8 @@ if ($src && isset($cache['sources'][$src])) {
         }
 }
 
-$w = $width ? $width : max(imagesx($icon), imagesx($thumb));
-$h = $height ? $height : max(imagesy($icon), imagesy($thumb));
+$w = $width ? $width : max(imagesx($icon), @imagesx($thumb));
+$h = $height ? $height : max(imagesy($icon), @imagesy($thumb));
 
 $img = imagecreatetruecolor($w, $h);
 imagefill($img, 0, 0, imagecolorallocatealpha($img, 0, 0, 0, 127));
