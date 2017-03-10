@@ -100,8 +100,11 @@ header('X-update-divs: ' . $reload);
 if (!is_writable($workdir))
         echo '<font color="red">Error: ' . $workdir . ' is not writable</font><br><br>';
 
-if (!is_writable('data'))
-        echo '<font color="red">Error: data dir is not writable</font><br><br>';
+if (!is_writable('live'))
+        echo '<font color="red">Error: live dir is not writable</font><br><br>';
+
+if (!is_writable('vod'))
+        echo '<font color="red">Error: vod dir is not writable</font><br><br>';
 ?>
 <?php
 foreach ($cache['sources'] as $key => $src) {
@@ -117,7 +120,11 @@ foreach ($cache['sources'] as $key => $src) {
   </a>
   <span>
    &nbsp;
-   <a href="<?=((isset($_SERVER['HTTPS'], $src['encrypt']) && $src['encrypt']) ? 'https://' : 'http://') . $urlbase?>/hod.php/<?=urlencode($key)?>/<?=urlencode($key)?>.m3u8<?=(isset($src['encrypt']) && $src['encrypt']) ? '?' . $session : ''?>">
+   <a href="<?=((isset($_SERVER['HTTPS'], $src['encrypt']) && $src['encrypt']) ?
+           'https://' : 'http://') .
+           $urlbase?>/hod.php/<?=((isset($cache['sources'][$key]['live']) &&
+                                   $cache['sources'][$key]['live']) ?
+                           'live' : 'vod')?>/<?=urlencode($key)?>/<?=urlencode($key)?>.m3u8<?=(isset($src['encrypt']) && $src['encrypt']) ? '?' . $session : ''?>">
     <img src="img.php?h=15&w=15" alt="direct link">
    </a>
   </span>

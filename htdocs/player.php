@@ -52,7 +52,9 @@ if ($src && isset($cache['sources'][$src]))
                         ini_get('session.cookie_secure')) ?
                         'https://' : 'http://') .
                 $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) .
-                '/hod.php/' . urlencode($src) . '/' .
+                '/hod.php/' . ((isset($cache['sources'][$src]['live']) &&
+                                        $cache['sources'][$src]['live']) ?
+                                'live' : 'vod') . '/' . urlencode($src) . '/' .
                 urlencode($src) . '.m3u8';
 
 $title = isset($cache['sources'][$src]) ?

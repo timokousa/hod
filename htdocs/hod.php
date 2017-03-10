@@ -47,15 +47,16 @@ if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure') && $session) {
 }
 
 $key = isset($_GET['key']) ? $_GET['key'] : false;
-$file = isset($_SERVER['PATH_INFO']) ? basename($_SERVER['PATH_INFO']) : false;
-$src = isset($_SERVER['PATH_INFO']) ?
-        basename(dirname($_SERVER['PATH_INFO'])) : false;
+$file = isset($_SERVER['PATH_INFO']) ?
+        ltrim($_SERVER['PATH_INFO'], '/') : false;
+$src = false;
 
-if ('..' === $src)
-        $src = false;
+if (strpos(realpath($file), getcwd() . DIRECTORY_SEPARATOR) != 0)
+        $file = false;
+else
+        $src = basename(dirname($file));
 
-if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
-                        DIRECTORY_SEPARATOR . $src . '.m3u8') &&
+if ($src && !file_exists(dirname($file) . DIRECTORY_SEPARATOR . $src . '.m3u8') &&
                 !file_exists($workdir . DIRECTORY_SEPARATOR . $src . '.lock')) {
         if (!isset($cache['sources']))
                 include_once 'sources.php';
@@ -71,26 +72,31 @@ if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
                         if (!mkdir($workdir))
                                 exit("Could not create workdir.");
 
-                if (!is_dir('data'))
-                        if (!mkdir('data'))
-                                exit("Could not create data dir.");
+                $dest = (isset($cache['sources'][$src]['live']) &&
+                                $cache['sources'][$src]['live']) ?
+                        'live' : 'vod';
+
+                if (!is_dir($dest))
+                        if (!mkdir($dest))
+                                exit("Could not create $dest dir.");
 
                 $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
                 touch($tsfile);
 
                 $opts = ' -f' .
-                        ' -p ' . escapeshellarg('data' .
+                        ' -p ' . escapeshellarg($dest .
                                         DIRECTORY_SEPARATOR . $src .
                                         DIRECTORY_SEPARATOR . $src) .
                         ' -u ' . escapeshellarg(($cookiehack ? 'PROTOCOL://HOST/' :
                                                 'http://PROXY/') .
                                         basename($_SERVER['SCRIPT_NAME']) .
+                                        '/' . $dest .
                                         '/' . urlencode($src) . '/') .
-                        ' -U ' . escapeshellarg(($cookiehack ?
+                        ' -U ' . escapeshellarg($cookiehack ?
                                                 'http://PROXY/' .
                                                 basename($_SERVER['SCRIPT_NAME']) .
-                                                '/' . urlencode($src) . '/' :
-                                                urlencode($src) . '/')) .
+                                                '/' . $dest .
+                                                '/' . urlencode($src) . '/' : '') .
                         ' -w ' . escapeshellarg($workdir);
 
                 if (isset($ffopts))
@@ -134,9 +140,9 @@ if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
                                         $src . '.stderr') .
                                 ' &');
 
-                while (disk_free_space('data') < $df_threshold) {
+                while (disk_free_space('vod') < $df_threshold) {
                         if (!isset($dirs))
-                                $dirs = glob('data' . DIRECTORY_SEPARATOR . '*',
+                                $dirs = glob('vod' . DIRECTORY_SEPARATOR . '*',
                                                 GLOB_ONLYDIR | GLOB_NOSORT);
 
                         $oldest = false;
@@ -184,8 +190,6 @@ if ($src && !file_exists('data' . DIRECTORY_SEPARATOR . $src .
 }
 
 if ($file && $src) {
-        $realfile = 'data' . DIRECTORY_SEPARATOR . $src .
-                DIRECTORY_SEPARATOR . $file;
         $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
         $lockfile = $workdir . DIRECTORY_SEPARATOR . $src . '.lock';
 
@@ -193,7 +197,7 @@ if ($file && $src) {
                 for ($i = 0; $i < 30; $i++) {
                         clearstatcache();
 
-                        if (file_exists($realfile) ||
+                        if (file_exists($file) ||
                                         (filemtime($tsfile) + 3 < time() &&
                                          !file_exists($lockfile)))
                                 break;
@@ -201,7 +205,7 @@ if ($file && $src) {
                         sleep(1);
                 }
 
-        if (preg_match('/\.m3u8$/i', $file) && file_exists($realfile)) {
+        if (preg_match('/\.m3u8$/i', $file) && file_exists($file)) {
                 ob_start();
                 ob_start('ob_gzhandler');
 
@@ -238,7 +242,7 @@ if ($file && $src) {
                                         '.m3u8' . (($cookiehack && $session) ?
                                                 '?' . $session : '')
                                      ),
-                                file_get_contents($realfile));
+                                file_get_contents($file));
 
                 if (!session_id() &&
                                 strpos(ob_get_contents(),
@@ -257,11 +261,11 @@ if ($file && $src) {
 
                 exit;
         }
-        else if (preg_match('/\.ts$/i', $file) && file_exists($realfile)) {
-                header('Content-Length: ' . filesize($realfile));
+        else if (preg_match('/\.ts$/i', $file) && file_exists($file)) {
+                header('Content-Length: ' . filesize($file));
                 header('Content-Type: video/MP2T');
 
-                readfile($realfile);
+                readfile($file);
 
                 exit;
         }
