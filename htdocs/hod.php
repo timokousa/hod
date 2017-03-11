@@ -139,8 +139,15 @@ if ($src && !file_exists(dirname($file) . DIRECTORY_SEPARATOR . $src . '.m3u8') 
                                         $workdir . DIRECTORY_SEPARATOR .
                                         $src . '.stderr') .
                                 ' &');
+        }
+}
 
-                while (disk_free_space('vod') < $df_threshold) {
+if ($file && $src) {
+        $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
+        $lockfile = $workdir . DIRECTORY_SEPARATOR . $src . '.lock';
+
+        if (preg_match('/\.m3u8$/i', $file)) {
+                if (disk_free_space('vod') < $df_threshold) {
                         if (!isset($dirs))
                                 $dirs = glob('vod' . DIRECTORY_SEPARATOR . '*',
                                                 GLOB_ONLYDIR | GLOB_NOSORT);
@@ -168,8 +175,7 @@ if ($src && !file_exists(dirname($file) . DIRECTORY_SEPARATOR . $src . '.m3u8') 
                                         @unlink($prefix . '.stderr');
                                         @unlink($prefix . '.timestamp');
 
-                                        unset($dirs[$i]);
-                                        continue 2;
+                                        break;
                                 }
 
                                 $mtime = filemtime($prefix . '.timestamp');
@@ -180,20 +186,11 @@ if ($src && !file_exists(dirname($file) . DIRECTORY_SEPARATOR . $src . '.m3u8') 
                                 }
                         }
 
-                        if ($oldest)
+                        if (!isset($files) && $oldest)
                                 @unlink($workdir . DIRECTORY_SEPARATOR .
                                                 $oldest . '.timestamp');
-                        else
-                                break;
                 }
-        }
-}
 
-if ($file && $src) {
-        $tsfile = $workdir . DIRECTORY_SEPARATOR . $src . '.timestamp';
-        $lockfile = $workdir . DIRECTORY_SEPARATOR . $src . '.lock';
-
-        if (preg_match('/\.m3u8$/i', $file))
                 for ($i = 0; $i < 30; $i++) {
                         clearstatcache();
 
@@ -204,6 +201,7 @@ if ($file && $src) {
 
                         sleep(1);
                 }
+        }
 
         if (preg_match('/\.m3u8$/i', $file) && file_exists($file)) {
                 ob_start();
