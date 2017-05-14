@@ -262,16 +262,16 @@ if (!isset($opts['3'])) {
                         $probe->{'streams'}[$index]->{'tags'}->{'language'} : $index;
 
                 $manifest .= '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio"';
-                $manifest .= ',NAME="' . $lang . '"';
+                $manifest .= ',NAME="' . $lang . ' (' . $index . ')"';
                 $manifest .= ',LANGUAGE="' . $lang . '"';
                 $manifest .= ',AUTOSELECT=YES';
                 if ($index == $default_audio)
                         $manifest .= ',DEFAULT=YES';
                 $manifest .= ',URI="' . (isset($opts['u']) ? $opts['u'] : '' ) .
-                        $prefix . '.audio.' . $lang . '.m3u8"' . "\n";
+                        $prefix . '.audio.' . $lang . '-' . $index . '.m3u8"' . "\n";
 
                 $fifo = $workdir . DIRECTORY_SEPARATOR .
-                        $prefix . '.audio.' . $lang . '.fifo';
+                        $prefix . '.audio.' . $lang . '-' . $index . '.fifo';
 
                 if (@filetype($fifo) != 'fifo' && !posix_mkfifo($fifo, 0644)) {
                         error_log("could not create fifo");
@@ -284,14 +284,15 @@ if (!isset($opts['3'])) {
                         ' -f mpegts -y ' . escapeshellarg($fifo);
 
                 $m3u8 = $datadir . DIRECTORY_SEPARATOR . $prefix . '.audio.' .
-                        $lang . '.m3u8';
+                        $lang . '-' . $index . '.m3u8';
 
                 exec('segmenter' .
                                 $seg_opts .
                                 ' -p ' . escapeshellarg($m3u8) .
                                 ' -i ' . escapeshellarg($fifo) .
                                 ' ' . escapeshellarg($datadir . DIRECTORY_SEPARATOR .
-                                        $prefix . '.audio.' . $lang . '.%u.ts') .
+                                        $prefix . '.audio.' . $lang . '-' .
+                                        $index . '.%u.ts') .
                                 ' > /dev/null 2> /dev/null &');
 
                 $files[] = $m3u8;
