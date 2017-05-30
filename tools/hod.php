@@ -369,11 +369,11 @@ if (count($audio_indexes)) {
         $manifest .= "\n";
 
         $manifest .= (isset($opts['u']) ? $opts['u'] : '' ) .
-                $prefix . '.audio.' . $lang . ".m3u8\n";
+                $prefix . '.audio.' . $lang . '-' . $default_audio . ".m3u8\n";
 
         if (isset($opts['3'])) {
                 $fifo = $workdir . DIRECTORY_SEPARATOR .
-                        $prefix . '.audio.' . $lang . '.fifo';
+                        $prefix . '.audio.' . $lang . '-' . $default_audio . '.fifo';
 
                 if (@filetype($fifo) != 'fifo' && !posix_mkfifo($fifo, 0644)) {
                         error_log("could not create fifo");
@@ -386,14 +386,15 @@ if (count($audio_indexes)) {
                         ' -f mpegts -y ' . escapeshellarg($fifo);
 
                 $m3u8 = $datadir . DIRECTORY_SEPARATOR . $prefix . '.audio.' .
-                        $lang . '.m3u8';
+                        $lang . '-' . $default_audio . '.m3u8';
 
                 exec('segmenter' .
                                 $seg_opts .
                                 ' -p ' . escapeshellarg($m3u8) .
                                 ' -i ' . escapeshellarg($fifo) .
                                 ' ' . escapeshellarg($datadir . DIRECTORY_SEPARATOR .
-                                        $prefix . '.audio.' . $lang . '.%u.ts') .
+                                        $prefix . '.audio.' . $lang . '-' .
+                                        $default_audio . '.%u.ts') .
                                 ' > /dev/null 2> /dev/null &');
 
                 $files[] = $m3u8;
