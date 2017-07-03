@@ -78,13 +78,16 @@ header('X-update-divs: ' . $reload);
   <link rel="apple-touch-startup-image" href="play.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <script type="text/javascript" src="javascript.js"></script>
+
+  <link href="http://vjs.zencdn.net/5.19.2/video-js.css" rel="stylesheet">
+  <script src="http://vjs.zencdn.net/5.19.2/video.js"></script>
+  <script src="https://unpkg.com/videojs-contrib-hls.js@3.0.2"></script>
  </head>
- <body onload="check_stream_status('<?=$videosrc?>', '<?=urlencode($src)?>');
+ <body onload="player_init(); check_stream_status('<?=$videosrc?>', '<?=urlencode($src)?>');
  setTimeout(function() { update_divs(); }, <?=$reload?> * 1000);">
   <div class="player">
    <video id="video" class="video-js vjs-default-skin" controls
-     width="640px" height="360px" poster="wait.png"
-     data-setup='{"html5":{"hls":{"withCredentials":true}}}'>
+     width="640px" height="360px" poster="wait.png">
     <source src="<?=$videosrc?>" type="application/x-mpegURL">
    </video>
    <div class="right tooltip">

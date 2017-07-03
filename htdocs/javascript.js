@@ -18,6 +18,7 @@
 */
 
 var failed = false;
+var player;
 
 function thumbs_up() {
         document.removeEventListener('scroll', thumbs_up);
@@ -60,32 +61,11 @@ function thumbs_up() {
                 document.addEventListener('scroll', thumbs_up);
 }
 
-function play_video() {
-        var video = document.getElementById('video');
-
-        if (typeof videojs === 'function')
-                video = videojs(video);
-
-        if (video && video.paused)
-                video.play();
-}
-
-function set_poster(url) {
-        var video = document.getElementById('video');
-
-        if (video) {
-                if (typeof videojs === 'function')
-                        videojs(video).poster(url);
-                else
-                        video.poster = url;
-        }
-}
-
 function check_stream_status(url, src) {
         var video = document.getElementById('video');
 
         if (video && src)
-                set_poster("img.php?icon=wait&src=" + src);
+                player.poster("img.php?icon=wait&src=" + src);
 
         var http = new XMLHttpRequest();
         http.open('get', url, true);
@@ -97,7 +77,7 @@ function check_stream_status(url, src) {
                 if (video && src && http.status != 200) {
                         failed = true;
 
-                        set_poster("img.php?icon=error&src=" + src);
+                        player.poster("img.php?icon=error&src=" + src);
 
                         var img = document.createElement('img');
                         img.alt = "error";
@@ -173,9 +153,10 @@ function check_stream_status(url, src) {
                         location.reload(true);
 
                 if (video && src)
-                        set_poster("img.php?icon=play&src=" + src);
+                        player.poster("img.php?icon=play&src=" + src);
 
-                play_video();
+                if (player.paused)
+                        player.play();
 
                 var readyimg = document.createElement('img');
                 readyimg.alt = "ready";
@@ -225,4 +206,31 @@ function update_divs() {
 
         http.responseType = "document";
         http.send();
+}
+
+function player_init() {
+        var video = document.getElementById('video');
+
+        if (typeof videojs === 'function') {
+                var opts = {
+                        html5: {
+                                hls: { withCredentials: true },
+                                hlsjsConfig: {
+                                        levelLoadingTimeOut: 60000,
+                                        manifestLoadingTimeOut: 60000,
+                                        xhrSetup: function(xhr, url) {
+                                                xhr.withCredentials = true;
+                                        },
+                                }
+                        }
+                };
+
+                player = videojs(video, opts);
+        }
+        else
+                player = {
+                        paused: function() { return video.paused; },
+                        play: function() { video.play(); },
+                        poster: function(url) { video.poster = url; },
+                };
 }
