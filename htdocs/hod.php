@@ -47,6 +47,7 @@ if (isset($_SERVER['HTTPS']) || !ini_get('session.cookie_secure') && $session) {
 }
 
 $key = isset($_GET['key']) ? $_GET['key'] : false;
+$t = isset($_GET['t']) ? $_GET['t'] : false;
 $file = isset($_SERVER['PATH_INFO']) ?
         ltrim($_SERVER['PATH_INFO'], '/') : false;
 $src = false;
@@ -115,20 +116,21 @@ if ($src && !file_exists(dirname($file) . DIRECTORY_SEPARATOR . $src . '.m3u8') 
                                 $cache['sources'][$src]['live']) {
                         $opts .= ' -C ' . escapeshellarg($tsfile) .
                                 ' -e' .
-                                ' -n 6';
+                                ' -n 6' .
+                                ' -R 60';
                 }
                 else
                         $opts .= ' -N 10';
 
                 if (isset($cache['sources'][$src]['encrypt']) &&
                                 $cache['sources'][$src]['encrypt']) {
-                        $opts .= ' -k ' . escapeshellarg($workdir .
-                                        DIRECTORY_SEPARATOR . $src . '.key') .
+                        $opts .= ' -k ' . escapeshellarg('hod -a ' . $workdir .
+                                        DIRECTORY_SEPARATOR . $src . '.key-%u') .
                                 ' -K ' . escapeshellarg('PROTOCOL://HOST/' .
                                                 basename($_SERVER['SCRIPT_NAME']) .
                                                 '?' . ($cookiehack ? 'SESSION&' : '') .
-                                                't=' . time() . '&' .
-                                                'key=' . urlencode($src));
+                                                'key=' . urlencode($src) . '&' .
+                                                't=%u');
                 }
 
                 exec('hod' . $opts .
@@ -171,9 +173,13 @@ if ($file && $src) {
 
                                         @rmdir($dir);
 
-                                        @unlink($prefix . '.key');
                                         @unlink($prefix . '.stderr');
                                         @unlink($prefix . '.timestamp');
+
+                                        $files = glob($prefix . '.key*');
+
+                                        foreach ($files as $rmfile)
+                                                @unlink($rmfile);
 
                                         break;
                                 }
@@ -272,7 +278,29 @@ if ($file && $src) {
 if ($key) {
         include_once 'auth.php';
 
+        if (strpos($key, DIRECTORY_SEPARATOR) !== false)
+                exit;
+
         $keyfile = $workdir . DIRECTORY_SEPARATOR . $key . '.key';
+
+        if (is_numeric($t)) {
+                $keyfile .= '-' . $t;
+
+                if ($t > 0) {
+                        $files = glob($workdir . DIRECTORY_SEPARATOR .
+                                        $key . '.key-*');
+
+                        foreach ($files as $file) {
+                                preg_match('/\.key-(\d+)$/', $file, $matches);
+
+                                if (!isset($matches[1]) || !$matches[1])
+                                        continue;
+
+                                if ($matches[1] < time() - 1200)
+                                        @unlink($file);
+                        }
+                }
+        }
 
         if (file_exists($keyfile)) {
                 ob_start();

@@ -19,7 +19,7 @@
    along with HLS On Demand.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-$opts = getopt('3c:C:efhi:k:K:l:n:N:o:p:rsSt:u:U:w:');
+$opts = getopt('3a:c:C:efhi:k:K:l:n:N:o:p:rR:sSt:u:U:w:');
 
 if (!$opts) {
         echo "Usage: $argv[0] [options] -i input\n";
@@ -31,25 +31,54 @@ if (isset($opts['h'])) {
         echo "Usage: $argv[0] [options] input\n\n";
         echo "Options:\n";
         echo " -3            restrict to HLSv3\n";
+        echo " -a <file>     generate AES key file if it doesn't exist and output it\n";
+        echo "               (nothing else is done if this option is set)\n";
         echo " -c <file>     ABR config file (default /etc/hod.conf)\n";
         echo " -C <file>     \"keepalive\" file\n";
         echo " -e            use time() as index in filenames\n";
         echo " -f            force overwrite of output files\n";
         echo " -i <input>    input stream\n";
-        echo " -k <keyfile>  keyfile for aes encryption\n";
-        echo " -K <url>      url for aes key in the playlist\n";
+        echo " -k <cmd>      command to get encryption key, use %u as the key index\n";
+        echo "               example: \"$argv[0] -a key-%u\"\n";
+        echo " -K <url>      url for aes key in the playlist, use %u as the key index\n";
         echo " -l <lang>     preferred language for audio / subtitles\n";
         echo " -n <count>    keep <count> segments (0 keeps all)\n";
         echo " -N <int>      value to pass for nice -n\n";
         echo " -o <opts>     options for ffmpeg\n";
         echo " -p <prefix>   prefix for all files to be created\n";
         echo " -r            randomize every IV\n";
+        echo " -R <count>    rotate key every <count> segments\n";
         echo " -s            use the system time instead of PTS\n";
         echo " -S            burn subtitles\n";
         echo " -t <sec>      target duration of a segment (default: 10)\n";
         echo " -u <url>      url prefix for playlists in the abr playlist\n";
         echo " -U <url>      url prefix for ts-files in the playlist\n";
         echo " -w <dir>      directory to store temporary files (default: .)\n\n";
+        exit;
+}
+
+if (isset($opts['a'])) {
+        if ($fp = fopen($opts['a'], "c+")) {
+                if (flock($fp, LOCK_EX)) {
+                        if (filesize($opts['a']) != 16) {
+                                $key = openssl_random_pseudo_bytes(16);
+                                ftruncate($fp, 0);
+                                fwrite($fp, $key);
+                                fflush($fp);
+                                flock($fp, LOCK_UN);
+                        }
+                        else {
+                                flock($fp, LOCK_UN);
+                                $key = fread($fp, 16);
+                        }
+
+                        echo $key;
+
+                }
+
+                fclose($fp);
+        }
+
         exit;
 }
 
@@ -85,6 +114,8 @@ if (isset($opts['e']))
         $seg_opts .= ' -e';
 if (isset($opts['f']))
         $seg_opts .= ' -f';
+if (isset($opts['k']))
+        $seg_opts .= ' -k ' . escapeshellarg($opts['k']);
 if (isset($opts['K']))
         $seg_opts .= ' -K ' . escapeshellarg($opts['K']);
 if (isset($opts['n']))
@@ -93,21 +124,14 @@ if (isset($opts['N']))
         $nice = 'nice -n ' . escapeshellarg($opts['N']) . ' ';
 if (isset($opts['r']))
         $seg_opts .= ' -r';
+if (isset($opts['R']))
+        $seg_opts .= ' -R ' .escapeshellarg($opts['R']);
 if (isset($opts['s']))
         $seg_opts .= ' -s';
 if (isset($opts['t']))
         $seg_opts .= ' -t ' . escapeshellarg($opts['t']);
 if (isset($opts['U']))
         $seg_opts .= ' -U ' . escapeshellarg($opts['U']);
-
-if (isset($opts['k'])) {
-        if (!file_exists($opts['k'])) {
-                file_put_contents($opts['k'], openssl_random_pseudo_bytes(16));
-                $files[] = $opts['k'];
-        }
-
-        $seg_opts .= ' -k ' . escapeshellarg($opts['k']);
-}
 
 if (file_exists($conf_file))
         include_once $conf_file;

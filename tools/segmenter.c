@@ -38,11 +38,12 @@
 #define PTS_HZ 90000
 #define TS_SIZE 188
 #define WBUF_SIZE TS_SIZE * AES_BLOCK_SIZE
+#define KEY_SIZE 16
 
 static int random_iv = 0;
 
 typedef struct segment {
-        unsigned int index, nameindex, discont;
+        unsigned int index, nameindex, discont, keyindex;
         unsigned char iv[AES_BLOCK_SIZE];
         long long time;
         struct segment *next;
@@ -56,7 +57,8 @@ void bailout_plan(int sig)
 }
 
 int seg_push(segment **seg, unsigned int index, long long time,
-                unsigned int nameindex, unsigned char *iv, unsigned int discont)
+                unsigned int nameindex, unsigned int keyindex,
+                unsigned char *iv, unsigned int discont)
 {
         segment *new, *tmp;
 
@@ -72,6 +74,7 @@ int seg_push(segment **seg, unsigned int index, long long time,
         new->nameindex = nameindex;
         memcpy(new->iv, iv, AES_BLOCK_SIZE);
         new->discont = discont;
+        new->keyindex = keyindex;
         new->next = NULL;
 
         if (*seg) {
@@ -103,11 +106,11 @@ ssize_t safe_read(int fd, uint8_t *buf, size_t count)
         return n;
 }
 
-int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
-                char *url_prefix, char *key_url, int live, int the_end)
+int playlist(segment *seg, char* plist, char *fmt, char *url_prefix,
+                char *key_url, int live, int the_end)
 {
-        char *tmpfile, *basec = NULL, *basen, ivstr[AES_BLOCK_SIZE * 2 + 1];
-        int i, tdur = 0;
+        char *tmpfile, *tmpurl, *basec = NULL, *basen, ivstr[AES_BLOCK_SIZE * 2 + 1];
+        int i, tdur = 0, keyindex = -1;
         FILE *fp;
         segment *tmp;
 
@@ -115,6 +118,12 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
                 fprintf(stderr, "malloc error.\n");
                 return 0;
         }
+
+        if (key_url)
+                if (!(tmpurl = malloc(sizeof (char) * (strlen(key_url) + 20)))) {
+                        fprintf(stderr, "malloc error.\n");
+                        return EXIT_FAILURE;
+                }
 
         sprintf(tmpfile, "%s.part", plist);
 
@@ -155,21 +164,28 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
                 basen = basename(basec);
         }
 
-        if (keyfile && !random_iv)
-                fprintf(fp, "#EXT-X-KEY:METHOD=AES-128,"
-                                "URI=\"%s\"\n", key_url ? key_url : keyfile);
-
         while (tmp) {
-                if (keyfile && random_iv) {
-                        for (i = 0; i < AES_BLOCK_SIZE; i++)
-                                sprintf(&ivstr[i * 2], "%02x", tmp->iv[i]);
+                if (key_url && (random_iv || keyindex != tmp->keyindex)) {
+                        sprintf(tmpurl, key_url, tmp->keyindex);
 
-                        fprintf(fp, "#EXT-X-KEY:METHOD=AES-128,"
-                                        "URI=\"%s\",IV=0x%s\n",
-                                        key_url ? key_url : keyfile, ivstr);
+                        fprintf(fp, "#EXT-X-KEY:METHOD=AES-128,URI=\"%s\"",
+                                        tmpurl);
+
+                        if (random_iv) {
+                                for (i = 0; i < AES_BLOCK_SIZE; i++)
+                                        sprintf(&ivstr[i * 2], "%02x",
+                                                        tmp->iv[i]);
+
+                                fprintf(fp, ",IV=0x%s", ivstr);
+                        }
+
+                        fprintf(fp, "\n");
+
+                        keyindex = tmp->keyindex;
                 }
 
                 fprintf(fp, "#EXTINF:%f,\n", ((double) tmp->time / PTS_HZ));
+
                 if (url_prefix) {
                         fprintf(fp, "%s", url_prefix);
                         fprintf(fp, basen, tmp->nameindex);
@@ -203,6 +219,9 @@ int playlist(segment *seg, char* plist, char *fmt, char *keyfile,
 
         free(tmpfile);
 
+        if (key_url)
+                free(tmpurl);
+
         return 1;
 }
 
@@ -216,16 +235,18 @@ int main(int argc, char *argv[])
             seg_len = 10, verbose = 0, audio_pts = 1, systime = 0, i,
             pes_remaining[MAX_PIDS] = { 0 }, limbo = 0, buf_size = TS_SIZE * 2,
             buf_n = 0, wbuf_n = 0, pesses = 0, input = STDIN_FILENO;
-        unsigned int index = 0, nameindex, disco = 0, bits = 0, bandwidth = 0;
+        unsigned int index = 0, nameindex, keyindex, kr_count = 0, rotate = 0,
+                     disco = 0, bits = 0, bandwidth = 0;
         char *fname, *fmt, *plist = NULL, *tmpfile, *keepalive = NULL,
-             *keyfile = NULL, *url_prefix = NULL, *key_url = NULL;
+             *keycmd = NULL, *tmpcmd, *url_prefix = NULL, *key_url = NULL;
         struct stat sb;
         segment *seg = NULL, *tmpseg;
-        unsigned char wbuf[WBUF_SIZE], key[AES_BLOCK_SIZE], iv[AES_BLOCK_SIZE],
+        unsigned char wbuf[WBUF_SIZE], key[KEY_SIZE], iv[AES_BLOCK_SIZE],
                       iv_init[AES_BLOCK_SIZE], ebuf[WBUF_SIZE];
         AES_KEY aes_key;
+        FILE *fp;
 
-        while ((opt = getopt(argc, argv, "ac:efhi:k:K:n:p:rst:T:U:v")) != -1) {
+        while ((opt = getopt(argc, argv, "ac:efhi:k:K:n:p:rR:st:T:U:v")) != -1) {
                 switch (opt) {
                         case 'a':
                                 audio_pts = 0;
@@ -250,11 +271,13 @@ int main(int argc, char *argv[])
                                 printf(" -e             use time() as index in filenames\n");
                                 printf(" -f             force overwrite of output files\n");
                                 printf(" -i <file>      use <file> for input (default: stdin)\n");
-                                printf(" -k <keyfile>   keyfile for openssl aes encryption\n");
-                                printf(" -K <url>       url for aes key in the playlist\n");
+                                printf(" -k <cmd>       command to get encryption key, use %%u as the key index\n");
+                                printf("                example: \"openssl rand 16 | tee key-%%u\"\n");
+                                printf(" -K <url>       url for aes key in the playlist, use %%u as the key index\n");
                                 printf(" -n <count>     keep <count> segments in the playlist (0 keeps all)\n");
                                 printf(" -p <filename>  write playlist file\n");
                                 printf(" -r             randomize every IV\n");
+                                printf(" -R <count>     rotate key every <count> segments\n");
                                 printf(" -s             use the system time instead of PTS\n");
                                 printf(" -t <sec>       target duration of a segment (default: 10)\n");
                                 printf(" -T <pid>       use <pid> for PTS\n");
@@ -270,7 +293,7 @@ int main(int argc, char *argv[])
                                 }
                                 break;
                         case 'k':
-                                keyfile = optarg;
+                                keycmd = optarg;
                                 break;
                         case 'K':
                                 key_url = optarg;
@@ -283,6 +306,9 @@ int main(int argc, char *argv[])
                                 break;
                         case 'r':
                                 random_iv = 1;
+                                break;
+                        case 'R':
+                                rotate = atoi(optarg);
                                 break;
                         case 's':
                                 systime = 1;
@@ -313,21 +339,35 @@ int main(int argc, char *argv[])
         else
                 fmt = argv[optind];
 
-        if (keyfile) {
-                fd = open(keyfile, O_RDONLY);
+        nameindex = epoch ? time(NULL) : index;
+        keyindex = nameindex;
 
-                if (fd == -1) {
-                        fprintf(stderr, "could not open encryption keyfile %s\n",
-                                        keyfile);
+        if (keycmd) {
+                if (!(tmpcmd = malloc(sizeof (char) * (strlen(keycmd) + 20)))) {
+                        fprintf(stderr, "malloc error.\n");
                         return EXIT_FAILURE;
                 }
 
-                if (read(fd, &key, AES_BLOCK_SIZE) != AES_BLOCK_SIZE) {
-                        fprintf(stderr, "error reading encryption keyfile.\n");
+                sprintf(tmpcmd, keycmd, keyindex);
+
+                if (!(fp = popen(tmpcmd, "r"))) {
+                        fprintf(stderr, "could not run key command\n");
                         return EXIT_FAILURE;
                 }
 
-                close(fd);
+                for (i = 0; i < KEY_SIZE; i++) {
+                        key[i] = fgetc(fp);
+
+                        if (feof(fp)) {
+                                fprintf(stderr, "error reading encryption key.\n");
+                                return EXIT_FAILURE;
+                        }
+                }
+
+                if (pclose(fp) != EXIT_SUCCESS) {
+                        fprintf(stderr, "error running key command.\n");
+                        return EXIT_FAILURE;
+                }
 
                 AES_set_encrypt_key(key, 128, &aes_key);
 
@@ -355,8 +395,6 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "malloc error.\n");
                 return EXIT_FAILURE;
         }
-
-        nameindex = epoch ? time(NULL) : index;
 
         sprintf(fname, fmt, nameindex);
         sprintf(tmpfile, "%s.part", fname);
@@ -521,7 +559,7 @@ int main(int argc, char *argv[])
                                 break;
                         }
 
-                        if (keyfile) {
+                        if (keycmd) {
                                 i = AES_BLOCK_SIZE - (wbuf_n % AES_BLOCK_SIZE);
 
                                 memset(&wbuf[wbuf_n], i, i);
@@ -531,7 +569,7 @@ int main(int argc, char *argv[])
                                                 iv, AES_ENCRYPT);
                         }
 
-                        if (write(fd, keyfile ? ebuf : wbuf, wbuf_n) != wbuf_n) {
+                        if (write(fd, keycmd ? ebuf : wbuf, wbuf_n) != wbuf_n) {
                                 fprintf(stderr, "write failed\n");
                                 return EXIT_FAILURE;
                         }
@@ -552,8 +590,8 @@ int main(int argc, char *argv[])
                                 return EXIT_FAILURE;
                         }
 
-                        seg_push(&seg, index, last_seg, nameindex, iv_init,
-                                        disco);
+                        seg_push(&seg, index, last_seg, nameindex, keyindex,
+                                        iv_init, disco);
 
                         disco = 0;
 
@@ -569,8 +607,8 @@ int main(int argc, char *argv[])
                                 if (verbose)
                                         printf("writing %s\n", plist);
 
-                                playlist(seg, plist, fmt, keyfile,
-                                                url_prefix, key_url, count, 0);
+                                playlist(seg, plist, fmt, url_prefix, key_url,
+                                                count, 0);
                         }
 
                         if (count && index > count) {
@@ -583,7 +621,35 @@ int main(int argc, char *argv[])
                         index++;
                         nameindex = epoch ? time(NULL) : index;
 
-                        if (keyfile) {
+                        if (keycmd && rotate && ++kr_count >= rotate) {
+                                keyindex = nameindex;
+                                kr_count = 0;
+
+                                sprintf(tmpcmd, keycmd, keyindex);
+
+                                if (!(fp = popen(tmpcmd, "r"))) {
+                                        fprintf(stderr, "could not run key command\n");
+                                        return EXIT_FAILURE;
+                                }
+
+                                for (i = 0; i < KEY_SIZE; i++) {
+                                        key[i] = fgetc(fp);
+
+                                        if (feof(fp)) {
+                                                fprintf(stderr, "error reading encryption key.\n");
+                                                return EXIT_FAILURE;
+                                        }
+                                }
+
+                                if (pclose(fp) != EXIT_SUCCESS) {
+                                        fprintf(stderr, "error running key command.\n");
+                                        return EXIT_FAILURE;
+                                }
+
+                                AES_set_encrypt_key(key, 128, &aes_key);
+                        }
+
+                        if (keycmd) {
                                 if (random_iv) {
                                         if (RAND_bytes(iv_init, AES_BLOCK_SIZE)
                                                         <= 0) {
@@ -637,13 +703,13 @@ int main(int argc, char *argv[])
 
                         while (i < buf_n) {
                                 if (buf_n - i >= WBUF_SIZE) {
-                                        if (keyfile)
+                                        if (keycmd)
                                                 AES_cbc_encrypt(&buf[i], ebuf,
                                                                 WBUF_SIZE,
                                                                 &aes_key, iv,
                                                                 AES_ENCRYPT);
 
-                                        if (write(fd, keyfile ? ebuf : &buf[i],
+                                        if (write(fd, keycmd ? ebuf : &buf[i],
                                                                 WBUF_SIZE) != WBUF_SIZE) {
                                                 fprintf(stderr, "write failed\n");
                                                 return EXIT_FAILURE;
@@ -698,12 +764,12 @@ int main(int argc, char *argv[])
                         wbuf_n += TS_SIZE;
 
                         if (wbuf_n == WBUF_SIZE) {
-                                if (keyfile)
+                                if (keycmd)
                                         AES_cbc_encrypt(wbuf, ebuf,
                                                         WBUF_SIZE, &aes_key,
                                                         iv, AES_ENCRYPT);
 
-                                if (write(fd, keyfile ? ebuf : wbuf,
+                                if (write(fd, keycmd ? ebuf : wbuf,
                                                         WBUF_SIZE) != WBUF_SIZE) {
                                         fprintf(stderr, "write failed\n");
                                         return EXIT_FAILURE;
@@ -744,7 +810,7 @@ int main(int argc, char *argv[])
         if (input != STDIN_FILENO)
                 close(input);
 
-        if (keyfile) {
+        if (keycmd) {
                 i = AES_BLOCK_SIZE - (wbuf_n % AES_BLOCK_SIZE);
 
                 memset(&wbuf[wbuf_n], i, i);
@@ -754,7 +820,7 @@ int main(int argc, char *argv[])
                                 iv, AES_ENCRYPT);
         }
 
-        if (write(fd, keyfile ? ebuf : wbuf, wbuf_n) != wbuf_n) {
+        if (write(fd, keycmd ? ebuf : wbuf, wbuf_n) != wbuf_n) {
                 fprintf(stderr, "write failed\n");
                 return EXIT_FAILURE;
         }
@@ -772,7 +838,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
         }
 
-        seg_push(&seg, index, cur_seg, nameindex, iv_init, disco);
+        seg_push(&seg, index, cur_seg, nameindex, keyindex, iv_init, disco);
 
         if (count && index > count) {
                 sprintf(fname, fmt, seg->nameindex);
@@ -786,7 +852,7 @@ int main(int argc, char *argv[])
                 if (verbose)
                         printf("writing %s\n", plist);
 
-                playlist(seg, plist, fmt, keyfile, url_prefix, key_url, count, 1);
+                playlist(seg, plist, fmt, url_prefix, key_url, count, 1);
         }
 
         if (count && index > count) {
