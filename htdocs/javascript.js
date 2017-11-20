@@ -180,8 +180,13 @@ function update_divs() {
         http.open('get', window.location.href, true);
 
         http.onreadystatechange = function () {
-                if (http.readyState != 4 || http.status != 200)
+                if (http.readyState != 4)
                         return;
+
+                if (http.status != 200) {
+                        setTimeout(function() { update_divs(); }, 600000);
+                        return;
+                }
 
                 var divs = http.responseXML.getElementsByTagName('div');
 
