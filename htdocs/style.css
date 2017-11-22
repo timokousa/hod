@@ -48,8 +48,14 @@ div.header {
  text-align: center;
 }
 
-div.player {
- width: 640px;
+.player {
+ width: 100%;
+}
+
+.player video {
+ min-width: 100%;
+ width: auto;
+ height: auto;
 }
 
 div.thumb {

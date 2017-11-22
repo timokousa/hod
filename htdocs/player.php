@@ -86,12 +86,12 @@ header('X-update-divs: ' . $reload);
  <body onload="player_init(); check_stream_status('<?=$videosrc?>', '<?=urlencode($src)?>');
  setTimeout(function() { update_divs(); }, <?=$reload?> * 1000);">
   <div class="player">
-   <video id="video" class="video-js vjs-default-skin" controls
-     width="640px" height="360px" poster="wait.png">
+   <video id="video" class="video-js vjs-default-skin vjs-16-9" controls poster="wait.png">
     <source src="<?=$videosrc?>" type="application/x-mpegURL">
    </video>
    <div class="right tooltip">
     <img id="status" src="img.php?h=30&w=30&icon=wait" class="spinccw">
+    &nbsp;
    </div>
    <div>
     <h2><?=$title?></h2>
